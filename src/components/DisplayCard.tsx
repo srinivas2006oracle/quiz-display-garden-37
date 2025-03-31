@@ -279,19 +279,21 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait }
 
   return (
     <div
-      className={`glass-card p-6 m-4 ${animationClass} ${animation.background} ${
-        isPortrait ? 'w-[90vw]' : 'w-[80vw]'
-      }`}
+      className={`glass-card p-4 ${animationClass} ${animation.background} w-full h-full`}
       style={{ 
         opacity: isVisible ? 1 : 0,
-        display: isVisible ? 'block' : 'none'
+        display: isVisible ? 'block' : 'none',
+        maxHeight: isPortrait ? 'auto' : '70vh',
+        overflow: 'auto'
       }}
     >
       <div className="flex items-center gap-2 mb-4">
         {renderIcon()}
         <h3 className="text-lg font-semibold capitalize">{type}</h3>
       </div>
-      {renderContent()}
+      <div className="overflow-auto">
+        {renderContent()}
+      </div>
     </div>
   );
 };

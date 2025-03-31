@@ -8,7 +8,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2 } from 'lucide-react';
 
 const Index = () => {
-  const { currentData, isConnected } = useSocket();
+  const { currentPairedData, isConnected } = useSocket();
   const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
   const isMobile = useIsMobile();
 
@@ -41,13 +41,27 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className={`flex-1 flex ${isPortrait ? 'items-center' : 'items-center'} justify-center p-4 overflow-hidden`}>
-        {currentData ? (
-          <DisplayCard 
-            data={currentData} 
-            isVisible={true} 
-            isPortrait={isPortrait}
-          />
+      <main className="flex-1 flex flex-col items-center justify-center p-4 overflow-hidden">
+        {currentPairedData ? (
+          <div className={`w-full max-w-7xl flex ${isPortrait || isMobile ? 'flex-col' : 'flex-row'} gap-4 items-center justify-center`}>
+            <div className={`${isPortrait || isMobile ? 'w-full' : 'w-1/2'}`}>
+              <DisplayCard 
+                data={currentPairedData.primary} 
+                isVisible={true} 
+                isPortrait={isPortrait}
+              />
+            </div>
+            
+            {currentPairedData.secondary && (
+              <div className={`${isPortrait || isMobile ? 'w-full' : 'w-1/2'}`}>
+                <DisplayCard 
+                  data={currentPairedData.secondary} 
+                  isVisible={true} 
+                  isPortrait={isPortrait}
+                />
+              </div>
+            )}
+          </div>
         ) : (
           <div className="flex items-center justify-center h-full">
             <p className="text-lg text-gray-400">Waiting for quiz data...</p>

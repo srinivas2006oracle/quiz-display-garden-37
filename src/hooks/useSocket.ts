@@ -12,9 +12,16 @@ import {
   getRandomUpcomingSchedule
 } from '@/lib/sampleData';
 
+// Define a new type for paired displays
+export type PairedDisplayData = {
+  primary: DisplayData;
+  secondary?: DisplayData;
+  duration: number;
+}
+
 // This implements a sequenced display pattern for the quiz
 export const useSocket = () => {
-  const [currentData, setCurrentData] = useState<DisplayData | null>(null);
+  const [currentPairedData, setCurrentPairedData] = useState<PairedDisplayData | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const sequenceIndexRef = useRef(0);
   const responseUpdateCounterRef = useRef(0);
@@ -36,25 +43,23 @@ export const useSocket = () => {
   }, []);
 
   // Create the display sequence based on requirements
-  const createDisplaySequence = (): { data: DisplayData, duration: number }[] => {
+  const createDisplaySequence = (): PairedDisplayData[] => {
     const questionData1 = getRandomQuestion();
     const questionData2 = getRandomQuestion();
     const responseData = getRandomResponse();
+    const answerData = getRandomAnswer();
+    const fastestAnswersData = getRandomFastestAnswers();
     
     return [
-      { data: getRandomImage(), duration: 10000 },                // 1. Image for 10 seconds
-      { data: getRandomVideo(), duration: 10000 },                // 2. Video for 10 seconds
-      { data: questionData1, duration: 30000 },                   // 3. Question for 30 seconds
-      { data: responseData, duration: 30000 },                    // 3. Responses for 30 seconds (updated every 10s)
-      { data: getRandomAnswer(), duration: 10000 },               // 4. Answer for 10 seconds
-      { data: getRandomFastestAnswers(), duration: 10000 },       // 5. Fastest Answers for 10 seconds
-      { data: getRandomLeaderboard(), duration: 10000 },          // 6. Leaderboard for 10 seconds
-      { data: questionData2, duration: 30000 },                   // 7. Another Question for 30 seconds
-      { data: responseData, duration: 30000 },                    // 7. Responses for 30 seconds (updated every 10s)
-      { data: getRandomAnswer(), duration: 10000 },               // 8. Answer for 10 seconds
-      { data: getRandomFastestAnswers(), duration: 10000 },       // 9. Fastest Answers for 10 seconds
-      { data: getRandomLeaderboard(), duration: 10000 },          // 10. Leaderboard for 10 seconds
-      { data: getRandomUpcomingSchedule(), duration: 20000 },     // 11. Upcoming Schedule for 20 seconds
+      { primary: getRandomImage(), duration: 10000 },                                     // 1. Image for 10 seconds
+      { primary: getRandomVideo(), duration: 10000 },                                     // 2. Video for 10 seconds
+      { primary: questionData1, secondary: responseData, duration: 30000 },               // 3. Question & Responses for 30 seconds (updated every 10s)
+      { primary: answerData, secondary: fastestAnswersData, duration: 10000 },            // 4. Answer & Fastest Answers for 10 seconds
+      { primary: getRandomLeaderboard(), duration: 10000 },                               // 5. Leaderboard for 10 seconds
+      { primary: questionData2, secondary: responseData, duration: 30000 },               // 6. Another Question & Responses for 30 seconds
+      { primary: getRandomAnswer(), secondary: getRandomFastestAnswers(), duration: 10000 }, // 7. Answer & Fastest Answers for 10 seconds
+      { primary: getRandomLeaderboard(), duration: 10000 },                               // 8. Leaderboard for 10 seconds
+      { primary: getRandomUpcomingSchedule(), duration: 20000 },                          // 9. Upcoming Schedule for 20 seconds
     ];
   };
 
@@ -73,10 +78,10 @@ export const useSocket = () => {
       }
       
       const currentItem = sequence[sequenceIndexRef.current];
-      setCurrentData(currentItem.data);
+      setCurrentPairedData(currentItem);
       
-      // Special handling for response data that needs to update every 10 seconds
-      if (currentItem.data.type === 'response') {
+      // Special handling for question-response paired data that needs to update every 10 seconds
+      if (currentItem.primary.type === 'question' && currentItem.secondary?.type === 'response') {
         // Only increment sequence index after 3 updates (30 seconds total)
         responseUpdateCounterRef.current++;
         
@@ -87,7 +92,10 @@ export const useSocket = () => {
         } else {
           // Update response data every 10 seconds
           timer = setTimeout(() => {
-            setCurrentData(getRandomResponse()); // Fresh response data
+            setCurrentPairedData({
+              ...currentItem,
+              secondary: getRandomResponse() // Fresh response data
+            });
             timer = setTimeout(displayNextItem, 0);
           }, 10000);
         }
@@ -107,7 +115,7 @@ export const useSocket = () => {
   }, [isConnected]);
 
   return {
-    currentData,
+    currentPairedData,
     isConnected,
   };
 };
