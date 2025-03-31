@@ -78,7 +78,6 @@ const sampleQuestions: QuestionData[] = [
   },
   {
     text: "Which planet is known as the Red Planet?",
-    image: "https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
     choices: ["Mars", "Venus", "Jupiter", "Saturn"],
     showfor: 8000,
   },
@@ -90,7 +89,6 @@ const sampleQuestions: QuestionData[] = [
   },
   {
     text: "What is the largest ocean on Earth?",
-    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
     choices: ["Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"],
     showfor: 9000,
   },
