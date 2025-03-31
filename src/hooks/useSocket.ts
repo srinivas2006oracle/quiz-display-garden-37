@@ -36,7 +36,8 @@ export const useSocket = () => {
       setCurrentData(data);
 
       // Clear data after showfor time
-      const showTime = data.data.showfor || 5000;
+      // Handle different data types properly for the showfor property
+      const showTime = getShowForTime(data);
       clearTimer = setTimeout(() => {
         setCurrentData(null);
         
@@ -54,6 +55,23 @@ export const useSocket = () => {
       clearTimeout(clearTimer);
     };
   }, [isConnected]);
+
+  // Helper function to get the showfor time based on data type
+  const getShowForTime = (data: DisplayData): number => {
+    // Default display time if not specified
+    const DEFAULT_SHOW_TIME = 5000;
+    
+    if (!data || !data.data) return DEFAULT_SHOW_TIME;
+    
+    // Handle array types specifically (responses)
+    if (data.type === 'response' && Array.isArray(data.data)) {
+      // For response arrays, if first item has showfor, use that, otherwise default
+      return data.data[0]?.showfor || DEFAULT_SHOW_TIME;
+    }
+    
+    // For all other types, try to access showfor directly
+    return (data.data as any).showfor || DEFAULT_SHOW_TIME;
+  };
 
   return {
     currentData,
