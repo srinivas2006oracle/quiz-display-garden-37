@@ -84,11 +84,13 @@ const sampleQuestions: QuestionData[] = [
   },
   {
     text: "Who painted the Mona Lisa?",
+    image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
     choices: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Michelangelo"],
     showfor: 12000,
   },
   {
     text: "What is the largest ocean on Earth?",
+    image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
     choices: ["Pacific Ocean", "Atlantic Ocean", "Indian Ocean", "Arctic Ocean"],
     showfor: 9000,
   },

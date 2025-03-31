@@ -53,7 +53,7 @@ export const useSocket = () => {
     return [
       { primary: getRandomImage(), duration: 10000 },                                     // 1. Image for 10 seconds
       { primary: getRandomVideo(), duration: 10000 },                                     // 2. Video for 10 seconds
-      { primary: questionData1, secondary: responseData, duration: 30000 },               // 3. Question & Responses for 30 seconds (updated every 10s)
+      { primary: questionData1, secondary: responseData, duration: 30000 },               // 3. Question & Responses for 30 seconds (updated every 5s)
       { primary: answerData, secondary: fastestAnswersData, duration: 10000 },            // 4. Answer & Fastest Answers for 10 seconds
       { primary: getRandomLeaderboard(), duration: 10000 },                               // 5. Leaderboard for 10 seconds
       { primary: questionData2, secondary: responseData, duration: 30000 },               // 6. Another Question & Responses for 30 seconds
@@ -69,6 +69,7 @@ export const useSocket = () => {
 
     const sequence = createDisplaySequence();
     let timer: NodeJS.Timeout;
+    let responseRefreshTimer: NodeJS.Timeout;
     
     const displayNextItem = () => {
       if (sequenceIndexRef.current >= sequence.length) {
@@ -80,25 +81,28 @@ export const useSocket = () => {
       const currentItem = sequence[sequenceIndexRef.current];
       setCurrentPairedData(currentItem);
       
-      // Special handling for question-response paired data that needs to update every 10 seconds
+      // Special handling for question-response paired data
       if (currentItem.primary.type === 'question' && currentItem.secondary?.type === 'response') {
-        // Only increment sequence index after 3 updates (30 seconds total)
-        responseUpdateCounterRef.current++;
+        // Clear any existing response refresh timer
+        if (responseRefreshTimer) clearInterval(responseRefreshTimer);
         
-        if (responseUpdateCounterRef.current >= 3) {
+        // Setup a refresh timer that updates responses every 5 seconds
+        responseRefreshTimer = setInterval(() => {
+          setCurrentPairedData(prev => {
+            if (!prev || prev.primary.type !== 'question') return prev;
+            return {
+              ...prev,
+              secondary: getRandomResponse() // Fresh response data every 5 seconds
+            };
+          });
+        }, 5000);
+        
+        // Move to next sequence item after duration
+        timer = setTimeout(() => {
+          clearInterval(responseRefreshTimer);
           sequenceIndexRef.current++;
-          responseUpdateCounterRef.current = 0;
-          timer = setTimeout(displayNextItem, 0); // Move to next item immediately
-        } else {
-          // Update response data every 10 seconds
-          timer = setTimeout(() => {
-            setCurrentPairedData({
-              ...currentItem,
-              secondary: getRandomResponse() // Fresh response data
-            });
-            timer = setTimeout(displayNextItem, 0);
-          }, 10000);
-        }
+          displayNextItem();
+        }, currentItem.duration);
       } else {
         // For all other data types, display for the specified duration
         sequenceIndexRef.current++;
@@ -111,6 +115,7 @@ export const useSocket = () => {
 
     return () => {
       clearTimeout(timer);
+      if (responseRefreshTimer) clearInterval(responseRefreshTimer);
     };
   }, [isConnected]);
 

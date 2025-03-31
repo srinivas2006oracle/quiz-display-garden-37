@@ -4,14 +4,16 @@ import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
 import { ArrowRight, Clock, Award, Info, Image, Video, MessageCircle, Users, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import CountdownTimer from './CountdownTimer';
 
 interface DisplayCardProps {
   data: DisplayData;
   isVisible: boolean;
   isPortrait: boolean;
+  duration?: number;
 }
 
-const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait }) => {
+const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, duration }) => {
   const { type } = data;
   const animation = getAnimationForType(type);
   const animationClass = isVisible ? animation.enter : animation.exit;
@@ -68,8 +70,12 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait }
       <div className="flex flex-col items-center gap-4">
         {question.text && <h2 className="text-xl md:text-2xl font-bold">{question.text}</h2>}
         {question.image && (
-          <div className="w-full max-w-md overflow-hidden rounded-lg">
-            <img src={question.image} alt="Question" className="w-full h-auto object-cover" />
+          <div className="w-full max-w-4xl overflow-hidden rounded-lg aspect-video mb-4">
+            <img 
+              src={question.image} 
+              alt="Question" 
+              className="w-full h-full object-cover" 
+            />
           </div>
         )}
         {question.choices && (
@@ -119,8 +125,12 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait }
       <div className="flex flex-col items-center gap-4">
         {image.name && <h2 className="text-xl md:text-2xl font-bold">{image.name}</h2>}
         {image.url && (
-          <div className="w-full max-w-xl overflow-hidden rounded-lg">
-            <img src={image.url} alt={image.name || 'Image'} className="w-full h-auto object-cover" />
+          <div className="w-full max-w-4xl overflow-hidden rounded-lg aspect-video">
+            <img 
+              src={image.url} 
+              alt={image.name || 'Image'} 
+              className="w-full h-full object-cover" 
+            />
           </div>
         )}
         {image.description && <p className="text-lg opacity-80">{image.description}</p>}
@@ -134,7 +144,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait }
       <div className="flex flex-col items-center gap-4">
         {video.name && <h2 className="text-xl md:text-2xl font-bold">{video.name}</h2>}
         {video.url && (
-          <div className="w-full max-w-xl bg-black/30 rounded-lg flex items-center justify-center p-8">
+          <div className="w-full max-w-4xl aspect-video bg-black/30 rounded-lg flex items-center justify-center">
             <Video className="h-16 w-16 text-white/70" />
             <p className="text-white/70">Video would play here</p>
           </div>
@@ -287,10 +297,20 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait }
         overflow: 'auto'
       }}
     >
-      <div className="flex items-center gap-2 mb-4">
-        {renderIcon()}
-        <h3 className="text-lg font-semibold capitalize">{type}</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          {renderIcon()}
+          <h3 className="text-lg font-semibold capitalize">{type}</h3>
+        </div>
+        
+        {/* Show countdown timer for question and answer cards */}
+        {(type === 'question' || type === 'answer') && duration && (
+          <div className="w-32 md:w-48">
+            <CountdownTimer duration={duration} />
+          </div>
+        )}
       </div>
+      
       <div className="overflow-auto">
         {renderContent()}
       </div>

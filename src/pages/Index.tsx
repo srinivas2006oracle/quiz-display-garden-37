@@ -49,6 +49,7 @@ const Index = () => {
                 data={currentPairedData.primary} 
                 isVisible={true} 
                 isPortrait={isPortrait}
+                duration={currentPairedData.duration}
               />
             </div>
             
@@ -58,6 +59,7 @@ const Index = () => {
                   data={currentPairedData.secondary} 
                   isVisible={true} 
                   isPortrait={isPortrait}
+                  duration={currentPairedData.duration}
                 />
               </div>
             )}
