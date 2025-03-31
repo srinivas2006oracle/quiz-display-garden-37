@@ -1,4 +1,3 @@
-
 export interface QuestionData {
   text?: string;
   image?: string;
@@ -157,6 +156,36 @@ const sampleResponses: ResponseData[] = [
     responseTime: 3.8,
     showfor: 5000,
   },
+  {
+    name: "Emily Wilson",
+    picture: "https://randomuser.me/api/portraits/women/4.jpg",
+    responseTime: 1.9,
+    showfor: 5000,
+  },
+  {
+    name: "Robert Brown",
+    picture: "https://randomuser.me/api/portraits/men/5.jpg",
+    responseTime: 2.7,
+    showfor: 5000,
+  },
+  {
+    name: "Olivia Martinez",
+    picture: "https://randomuser.me/api/portraits/women/6.jpg",
+    responseTime: 3.5,
+    showfor: 5000,
+  },
+  {
+    name: "Daniel Taylor",
+    picture: "https://randomuser.me/api/portraits/men/7.jpg",
+    responseTime: 2.2,
+    showfor: 5000,
+  },
+  {
+    name: "Sophia Anderson",
+    picture: "https://randomuser.me/api/portraits/women/8.jpg",
+    responseTime: 2.9,
+    showfor: 5000,
+  },
 ];
 
 const sampleFastestAnswers: FastestAnswersData = {
@@ -241,10 +270,17 @@ export const getRandomQuestion = (): DisplayData => ({
   data: sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)],
 });
 
-export const getRandomResponse = (): DisplayData => ({
-  type: "response",
-  data: sampleResponses,
-});
+export const getRandomResponse = (): DisplayData => {
+  // Randomly select 3-5 responses to display
+  const numberOfResponses = Math.floor(Math.random() * 3) + 3; // 3 to 5 responses
+  const shuffledResponses = [...sampleResponses].sort(() => 0.5 - Math.random());
+  const selectedResponses = shuffledResponses.slice(0, numberOfResponses);
+  
+  return {
+    type: "response",
+    data: selectedResponses,
+  };
+};
 
 export const getRandomImage = (): DisplayData => ({
   type: "image",
