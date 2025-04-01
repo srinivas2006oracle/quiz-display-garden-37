@@ -6,7 +6,7 @@ interface HeaderProps {
   title?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ title = "Quiz Display Garden" }) => {
+const Header: React.FC<HeaderProps> = ({ title = "BQV Quiz" }) => {
   return (
     <header className="w-full p-4 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="flex items-center gap-3">
