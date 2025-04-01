@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
-import { Check, Clock, Award, HelpCircle, Image, Video, MessageCircle, Users, Calendar, Info, CreditCard } from 'lucide-react';
+import { Check, Clock, Award, HelpCircle, Image, Video, MessageCircle, Users, Calendar, Info, CreditCard, QrCode } from 'lucide-react';
 import { format } from 'date-fns';
 import CountdownTimer from './CountdownTimer';
 
@@ -71,7 +71,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
       case 'credits':
         return <CreditCard className="h-6 w-6" />;
       case 'disclaimer':
-        return <Info className="h-6 w-6" />;
+        return <QrCode className="h-6 w-6" />;
       default:
         return <Info className="h-6 w-6" />;
     }
@@ -143,7 +143,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     
     return (
       <div className="flex flex-col gap-1">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1">
+        <div className="grid grid-cols-1 gap-1">
           {displayedResponses.map((response: any, index: number) => (
             <div 
               key={index} 

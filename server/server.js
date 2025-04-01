@@ -104,14 +104,15 @@ function createDisplaySequence() {
   
   return [
     { primary: sampleData.getRandomImage(), duration: 10000 },                               // 1. Image for 10 seconds
-    { primary: sampleData.getRandomVideo(), duration: 10000 },                               // 2. Video for 10 seconds
-    { primary: questionData1, secondary: responseData, duration: 30000 },                     // 3. Question & Responses for 30 seconds
-    { primary: answerData, secondary: fastestAnswersData, duration: 10000 },                 // 4. Answer & Fastest Answers for 10 seconds
-    { primary: sampleData.getRandomLeaderboard(), duration: 10000 },                         // 5. Leaderboard for 10 seconds
-    { primary: questionData2, secondary: responseData, duration: 30000 },                     // 6. Another Question & Responses for 30 seconds
-    { primary: sampleData.getRandomAnswer(), secondary: sampleData.getRandomFastestAnswers(), duration: 10000 }, // 7. Answer & Fastest Answers for 10 seconds
-    { primary: sampleData.getRandomLeaderboard(), duration: 10000 },                         // 8. Leaderboard for 10 seconds
-    { primary: sampleData.getRandomUpcomingSchedule(), duration: 20000 },                   // 9. Upcoming Schedule for 20 seconds
+    { primary: sampleData.getDisclaimer(), duration: 10000 },                               // 2. Disclaimer for 10 seconds
+    { primary: sampleData.getRandomVideo(), duration: 10000 },                               // 3. Video for 10 seconds
+    { primary: questionData1, secondary: responseData, duration: 30000 },                     // 4. Question & Responses for 30 seconds
+    { primary: answerData, secondary: fastestAnswersData, duration: 10000 },                 // 5. Answer & Fastest Answers for 10 seconds
+    { primary: sampleData.getRandomLeaderboard(), duration: 10000 },                         // 6. Leaderboard for 10 seconds
+    { primary: questionData2, secondary: responseData, duration: 30000 },                     // 7. Another Question & Responses for 30 seconds
+    { primary: sampleData.getRandomAnswer(), secondary: sampleData.getRandomFastestAnswers(), duration: 10000 }, // 8. Answer & Fastest Answers for 10 seconds
+    { primary: sampleData.getRandomLeaderboard(), duration: 10000 },                         // 9. Leaderboard for 10 seconds
+    { primary: sampleData.getCredits(), secondary: sampleData.getRandomUpcomingSchedule(), duration: 20000 },    // 10. Credits & Upcoming Schedule for 20 seconds
   ];
 }
 
