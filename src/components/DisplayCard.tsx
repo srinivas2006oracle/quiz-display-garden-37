@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
-import { ArrowRight, Clock, Award, Info, Image, Video, MessageCircle, Users, Calendar } from 'lucide-react';
+import { Check, Clock, Award, Question, Image, Video, MessageCircle, Users, Calendar, Info, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import CountdownTimer from './CountdownTimer';
 
@@ -53,7 +53,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderIcon = () => {
     switch (type) {
       case 'question':
-        return <Info className="h-6 w-6" />;
+        return <Question className="h-6 w-6" />;
       case 'response':
         return <MessageCircle className="h-6 w-6" />;
       case 'image':
@@ -61,13 +61,17 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
       case 'video':
         return <Video className="h-6 w-6" />;
       case 'answer':
-        return <ArrowRight className="h-6 w-6" />;
+        return <Check className="h-6 w-6 text-green-400" />;
       case 'fastestAnswers':
         return <Clock className="h-6 w-6" />;
       case 'leaderboard':
         return <Award className="h-6 w-6" />;
       case 'upcomingSchedule':
         return <Calendar className="h-6 w-6" />;
+      case 'credits':
+        return <CreditCard className="h-6 w-6" />;
+      case 'disclaimer':
+        return <Info className="h-6 w-6" />;
       default:
         return <Info className="h-6 w-6" />;
     }
@@ -91,6 +95,10 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
         return renderLeaderboard();
       case 'upcomingSchedule':
         return renderUpcomingSchedule();
+      case 'credits':
+        return renderCredits();
+      case 'disclaimer':
+        return renderDisclaimer();
       default:
         return <div>Unknown type</div>;
     }
@@ -167,7 +175,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     const image = data.data as any;
     return (
       <div className="flex flex-col items-center gap-1">
-                {image.name && <h2 className="text-xl md:text-2xl font-bold">{image.name}</h2>}
+        {image.name && <h2 className="text-xl md:text-2xl font-bold">{image.name}</h2>}
 
         {image.url && (
           <div className="w-full max-w-4xl overflow-hidden rounded-lg aspect-video animate-scale-in">
@@ -187,7 +195,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     const video = data.data as any;
     return (
       <div className="flex flex-col items-center gap-1">
-                {video.name && <h2 className="text-xl md:text-2xl font-bold">{video.name}</h2>}
+        {video.name && <h2 className="text-xl md:text-2xl font-bold">{video.name}</h2>}
 
         {video.url && (
           <div className="w-full max-w-4xl aspect-video bg-black/30 rounded-lg flex items-center justify-center animate-scale-in">
@@ -343,6 +351,73 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
             </tbody>
           </table>
         </div>
+      </div>
+    );
+  };
+
+  const renderCredits = () => {
+    const credits = data.data as any;
+    return (
+      <div className="flex flex-col gap-3">
+        {credits.curator && (
+          <div className="bg-white/10 rounded-lg p-2 animate-scale-in">
+            <h3 className="text-lg font-bold mb-1">Quiz Curated By</h3>
+            <div className="flex items-center gap-3">
+              {credits.curator.image && (
+                <img 
+                  src={credits.curator.image} 
+                  alt={credits.curator.name} 
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              )}
+              <div className="flex-1">
+                <h4 className="font-medium">{credits.curator.name}</h4>
+                <p className="text-sm opacity-80">{credits.curator.bio}</p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {credits.sponsor && (
+          <div className="bg-white/10 rounded-lg p-2 animate-scale-in" style={{ animationDelay: "200ms" }}>
+            <h3 className="text-lg font-bold mb-1">Quiz Sponsored By</h3>
+            <div className="flex items-center gap-3">
+              {credits.sponsor.image && (
+                <img 
+                  src={credits.sponsor.image} 
+                  alt={credits.sponsor.name} 
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              )}
+              <div className="flex-1">
+                <h4 className="font-medium">{credits.sponsor.name}</h4>
+                <p className="text-sm opacity-80">{credits.sponsor.bio}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderDisclaimer = () => {
+    const disclaimer = data.data as any;
+    return (
+      <div className="flex flex-col items-center gap-3">
+        {disclaimer.qrCode && (
+          <div className="w-40 h-40 bg-white p-2 rounded-lg">
+            <img 
+              src={disclaimer.qrCode} 
+              alt="QR Code" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+        )}
+        {disclaimer.text && (
+          <p className="text-sm opacity-80 text-center max-w-xl">
+            {disclaimer.text}
+          </p>
+        )}
       </div>
     );
   };

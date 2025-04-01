@@ -25,7 +25,7 @@ const Index = () => {
   // Loading state
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-quiz-pattern bg-repeat bg-opacity-10">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
@@ -39,7 +39,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-quiz-pattern bg-repeat bg-opacity-10">
       <Header />
       <main className="flex-1 flex flex-col items-center justify-center p-4 overflow-hidden">
         {currentPairedData ? (

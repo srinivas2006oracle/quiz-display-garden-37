@@ -147,6 +147,28 @@ const sampleUpcomingSchedule = {
   showfor: 18000,
 };
 
+// Sample credits
+const sampleCredits = {
+  curator: {
+    name: "Dr. Alex Morgan",
+    image: "https://randomuser.me/api/portraits/men/42.jpg",
+    bio: "Quiz master with 10 years experience in educational games"
+  },
+  sponsor: {
+    name: "Knowledge Plus Inc.",
+    image: "https://randomuser.me/api/portraits/women/43.jpg",
+    bio: "Supporting educational initiatives since 2010"
+  },
+  showfor: 12000,
+};
+
+// Sample disclaimer
+const sampleDisclaimer = {
+  qrCode: "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://example.com/terms",
+  text: "By participating in this quiz game, you agree to abide by our terms and conditions and have given your consent to record your responses for safe usage. Visit our website for more information.",
+  showfor: 10000,
+};
+
 // Functions to get random data
 function getRandomQuestion() {
   return {
@@ -209,6 +231,20 @@ function getRandomUpcomingSchedule() {
   };
 }
 
+function getCredits() {
+  return {
+    type: "credits",
+    data: sampleCredits,
+  };
+}
+
+function getDisclaimer() {
+  return {
+    type: "disclaimer",
+    data: sampleDisclaimer,
+  };
+}
+
 function getRandomData() {
   const types = [
     getRandomQuestion,
@@ -219,6 +255,8 @@ function getRandomData() {
     getRandomFastestAnswers,
     getRandomLeaderboard,
     getRandomUpcomingSchedule,
+    getCredits,
+    getDisclaimer,
   ];
   return types[Math.floor(Math.random() * types.length)]();
 }
@@ -233,5 +271,7 @@ module.exports = {
   getRandomFastestAnswers,
   getRandomLeaderboard,
   getRandomUpcomingSchedule,
+  getCredits,
+  getDisclaimer,
   getRandomData
 };
