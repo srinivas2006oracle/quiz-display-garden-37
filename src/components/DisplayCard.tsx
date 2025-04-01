@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
-import { Check, Clock, Award, Question, Image, Video, MessageCircle, Users, Calendar, Info, CreditCard } from 'lucide-react';
+import { Check, Clock, Award, HelpCircle, Image, Video, MessageCircle, Users, Calendar, Info, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import CountdownTimer from './CountdownTimer';
 
@@ -53,7 +53,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderIcon = () => {
     switch (type) {
       case 'question':
-        return <Question className="h-6 w-6" />;
+        return <HelpCircle className="h-6 w-6" />;
       case 'response':
         return <MessageCircle className="h-6 w-6" />;
       case 'image':
