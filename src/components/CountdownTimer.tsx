@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
 
 interface CountdownTimerProps {
   duration: number; // duration in milliseconds
   onComplete?: () => void;
+  isQuestion?: boolean; // Add this prop to determine if it's a question or answer
 }
 
-const CountdownTimer: React.FC<CountdownTimerProps> = ({ duration, onComplete }) => {
+const CountdownTimer: React.FC<CountdownTimerProps> = ({ duration, onComplete, isQuestion = false }) => {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [progress, setProgress] = useState(100);
 
@@ -38,10 +38,13 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ duration, onComplete })
   // Format time to show seconds
   const secondsLeft = Math.ceil(timeLeft / 1000);
 
+  // Determine the title based on isQuestion prop
+  const timerTitle = isQuestion ? 'Answer in...' : 'Next Question in...';
+
   return (
     <div className="w-full flex flex-col gap-1">
       <div className="flex justify-between items-center text-xs text-white/70">
-        <span>Time Left</span>
+        <span>{timerTitle}</span>
         <span>{secondsLeft}s</span>
       </div>
       <Progress value={progress} className="h-1.5 bg-white/10" />
