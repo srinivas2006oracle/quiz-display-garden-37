@@ -23,7 +23,7 @@ export const animationVariants = {
   answer: {
     enter: "animate-scale-in",
     exit: "animate-scale-out",
-    background: "bg-gradient-to-r from-quiz-blue to-quiz-purple",
+    background: "bg-gradient-to-r from-quiz-blue to-quiz-pink",
   },
   fastestAnswers: {
     enter: "animate-fade-in",
@@ -39,6 +39,16 @@ export const animationVariants = {
     enter: "animate-fade-in",
     exit: "animate-fade-out",
     background: "bg-gradient-to-r from-quiz-purple to-quiz-blue",
+  },
+  credits: {
+    enter: "animate-fade-in",
+    exit: "animate-fade-out",
+    background: "bg-gradient-to-r from-quiz-blue to-quiz-pink",
+  },
+  disclaimer: {
+    enter: "animate-scale-in",
+    exit: "animate-scale-out",
+    background: "bg-gradient-to-r from-quiz-pink to-quiz-purple",
   },
 };
 
