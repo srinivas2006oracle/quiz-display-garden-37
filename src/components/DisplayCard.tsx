@@ -95,7 +95,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     const responses = data.data as any;
     return (
       <div className="flex flex-col gap-4">
-        {/*<h2 className="text-xl md:text-2xl font-bold">Responses</h2>*/}
+        <h2 className="text-xl md:text-2xl font-bold">Responses</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {responses.map((response: any, index: number) => (
             <div key={index} className="p-4 bg-white/10 rounded-lg flex items-center gap-3">
@@ -173,7 +173,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     const fastestAnswers = data.data as any;
     return (
       <div className="flex flex-col items-center gap-4">
-        {/*<h2 className="text-xl md:text-2xl font-bold">Fastest Answers</h2>*/}
+        <h2 className="text-xl md:text-2xl font-bold">Fastest Answers</h2>
         <div className="flex flex-col gap-3 w-full max-w-md">
           {fastestAnswers.responses && fastestAnswers.responses.map((response: any, index: number) => (
             <div 
@@ -210,7 +210,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     const leaderboard = data.data as any;
     return (
       <div className="flex flex-col items-center gap-4">
-        {/*<h2 className="text-xl md:text-2xl font-bold">Leaderboard</h2>*/}
+        <h2 className="text-xl md:text-2xl font-bold">Leaderboard</h2>
         <div className="flex flex-col gap-3 w-full max-w-md">
           {leaderboard.users && leaderboard.users.map((user: any, index: number) => (
             <div 
@@ -248,7 +248,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     const upcomingSchedule = data.data as any;
     return (
       <div className="flex flex-col items-center gap-4">
-       {/* <h2 className="text-xl md:text-2xl font-bold">Upcoming Schedule</h2>*/}
+        <h2 className="text-xl md:text-2xl font-bold">Upcoming Schedule</h2>
         <div className="w-full overflow-x-auto">
           <table className="min-w-full divide-y divide-white/20">
             <thead>
@@ -304,12 +304,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
         </div>
         
         {/* Show countdown timer for question and answer cards */}
-        {(type === 'question' ) && duration && (
-          <div className="w-32 md:w-48">
-            <CountdownTimer duration={duration} isQuestion={true} />
-          </div>
-        )}
-                {(type === 'answer') && duration && (
+        {(type === 'question' || type === 'answer') && duration && (
           <div className="w-32 md:w-48">
             <CountdownTimer duration={duration} />
           </div>

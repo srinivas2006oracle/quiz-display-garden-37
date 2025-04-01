@@ -11,7 +11,7 @@ export type PairedDisplayData = {
 }
 
 // The URL of the backend server
-const SOCKET_SERVER_URL = 'http://localhost:5001';
+const SOCKET_SERVER_URL = 'http://localhost:5000';
 
 // This implements a connection to the socket.io server
 export const useSocket = () => {

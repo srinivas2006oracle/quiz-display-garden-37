@@ -6,6 +6,7 @@
 const sampleQuestions = [
   {
     text: "What is the capital of France?",
+    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
     choices: ["Paris", "London", "Berlin", "Madrid"],
     showfor: 10000,
   },

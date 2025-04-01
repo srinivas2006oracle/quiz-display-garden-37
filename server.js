@@ -25,7 +25,7 @@ const io = socketIo(server, {
 });
 
 // Import sample data generator functions
-const sampleData = require('./sampleData');
+const sampleData = require('./server/sampleData');
 
 // Store active connections
 const activeConnections = new Set();
@@ -116,7 +116,7 @@ function createDisplaySequence() {
 }
 
 // Define the port
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 // Start the server
 server.listen(PORT, () => {
