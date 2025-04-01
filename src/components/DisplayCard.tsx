@@ -23,15 +23,15 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   
   useEffect(() => {
     if (isVisible) {
-      const itemTypes = ['question', 'response', 'fastestAnswers', 'leaderboard'];
+      const itemTypes = ['response', 'fastestAnswers', 'leaderboard'];
       if (itemTypes.includes(type)) {
         setAnimatedItems([]);
-        const items = type === 'question' ? 
-          ((data.data as any).choices || []).length : 
-          type === 'response' ? 
-            ((data.data as any) || []).length :
-            type === 'fastestAnswers' || type === 'leaderboard' ? 
-              ((data.data as any).responses || (data.data as any).users || []).length : 0;
+        const items = type === 'response' ? 
+            Math.min(((data.data as any) || []).length, 3) :
+            type === 'fastestAnswers' ? 
+              Math.min(((data.data as any).responses || []).length, 5) :
+              type === 'leaderboard' ? 
+                Math.min(((data.data as any).users || []).length, 10) : 0;
         
         // Stagger the animations
         for (let i = 0; i < items; i++) {
@@ -39,6 +39,11 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
             setAnimatedItems(prev => [...prev, i]);
           }, i * 150); // 150ms delay between each item
         }
+      } else if (type === 'question') {
+        // For question, animate all choices immediately without staggering
+        const choices = ((data.data as any).choices || []).length;
+        const allIndexes = Array.from({ length: choices }, (_, i) => i);
+        setAnimatedItems(allIndexes);
       }
     } else {
       setAnimatedItems([]);
@@ -94,7 +99,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderQuestion = () => {
     const question = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1">
         {question.text && <h2 className="text-xl md:text-2xl font-bold">{question.text}</h2>}
         {question.image && (
           <div className="w-full max-w-4xl overflow-hidden rounded-lg aspect-video mb-2">
@@ -106,7 +111,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
           </div>
         )}
         {question.choices && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full max-w-md">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 w-full max-w-md">
             {question.choices.map((choice: string, index: number) => (
               <div 
                 key={index} 
@@ -125,13 +130,16 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderResponses = () => {
     const responses = data.data as any;
+    // Limit to displaying 3 responses
+    const displayedResponses = responses.slice(0, 3);
+    
     return (
-      <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-          {responses.map((response: any, index: number) => (
+      <div className="flex flex-col gap-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1">
+          {displayedResponses.map((response: any, index: number) => (
             <div 
               key={index} 
-              className={`p-2 bg-white/10 rounded-lg flex items-center gap-2 transform transition-all duration-300 ${
+              className={`p-1 bg-white/10 rounded-lg flex items-center gap-1 transform transition-all duration-300 ${
                 animatedItems.includes(index) ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-4 scale-95'
               }`}
             >
@@ -139,7 +147,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
                 <img 
                   src={response.picture} 
                   alt={response.name || 'User'} 
-                  className="w-10 h-10 rounded-full object-cover"
+                  className="w-8 h-8 rounded-full object-cover"
                 />
               )}
               <div>
@@ -158,7 +166,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderImage = () => {
     const image = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1">
         {image.url && (
           <div className="w-full max-w-4xl overflow-hidden rounded-lg aspect-video animate-scale-in">
             <img 
@@ -176,7 +184,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderVideo = () => {
     const video = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1">
         {video.url && (
           <div className="w-full max-w-4xl aspect-video bg-black/30 rounded-lg flex items-center justify-center animate-scale-in">
             <Video className="h-12 w-12 text-white/70" />
@@ -190,7 +198,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderAnswer = () => {
     const answer = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1">
         <h2 className="text-xl md:text-2xl font-bold">Correct Answer</h2>
         {answer.text && (
           <div className="text-3xl md:text-4xl font-bold text-white animate-scale-in">{answer.text}</div>
@@ -202,15 +210,25 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     );
   };
 
+  const getMedalIcon = (index: number) => {
+    if (index === 0) return <Award className="h-4 w-4 text-yellow-300" />; // Gold
+    if (index === 1) return <Award className="h-4 w-4 text-gray-300" />; // Silver
+    if (index === 2) return <Award className="h-4 w-4 text-amber-600" />; // Bronze
+    return null;
+  };
+
   const renderFastestAnswers = () => {
     const fastestAnswers = data.data as any;
+    // Limit to displaying 5 fastest answers
+    const displayedResponses = fastestAnswers.responses ? fastestAnswers.responses.slice(0, 5) : [];
+    
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1">
         <div className="flex flex-col gap-1 w-full max-w-md">
-          {fastestAnswers.responses && fastestAnswers.responses.map((response: any, index: number) => (
+          {displayedResponses.map((response: any, index: number) => (
             <div 
               key={index} 
-              className={`p-2 rounded-lg flex items-center gap-2 transform transition-all duration-300 ${
+              className={`p-1 rounded-lg flex items-center gap-2 transform transition-all duration-300 ${
                 index === 0 ? 'bg-yellow-500/30' : 
                 index === 1 ? 'bg-gray-400/30' : 
                 index === 2 ? 'bg-amber-700/30' : 'bg-white/10'
@@ -218,7 +236,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
                 animatedItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
             >
-              {index === 0 && <Award className="h-4 w-4 text-yellow-300" />}
+              {getMedalIcon(index)}
               {response.picture && (
                 <img 
                   src={response.picture} 
@@ -242,13 +260,16 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderLeaderboard = () => {
     const leaderboard = data.data as any;
+    // Limit to displaying 10 leaderboard entries
+    const displayedUsers = leaderboard.users ? leaderboard.users.slice(0, 10) : [];
+    
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1">
         <div className="flex flex-col gap-1 w-full max-w-md">
-          {leaderboard.users && leaderboard.users.map((user: any, index: number) => (
+          {displayedUsers.map((user: any, index: number) => (
             <div 
               key={index} 
-              className={`p-2 rounded-lg flex items-center gap-2 transform transition-all duration-300 ${
+              className={`p-1 rounded-lg flex items-center gap-2 transform transition-all duration-300 ${
                 index === 0 ? 'bg-yellow-500/30' : 
                 index === 1 ? 'bg-gray-400/30' : 
                 index === 2 ? 'bg-amber-700/30' : 'bg-white/10'
@@ -256,6 +277,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
                 animatedItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
             >
+              {getMedalIcon(index)}
               <div className="w-6 h-6 flex items-center justify-center font-bold text-sm">
                 {index + 1}
               </div>
@@ -282,34 +304,34 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderUpcomingSchedule = () => {
     const upcomingSchedule = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1">
         <div className="w-full overflow-x-auto">
           <table className="min-w-full divide-y divide-white/20">
             <thead>
               <tr>
-                <th className="px-2 py-2 text-left text-xs font-medium text-white/70">Program</th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-white/70 hidden md:table-cell">Description</th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-white/70">Date & Time</th>
-                <th className="px-2 py-2 text-left text-xs font-medium text-white/70">Starts In</th>
+                <th className="px-2 py-1 text-left text-xs font-medium text-white/70">Program</th>
+                <th className="px-2 py-1 text-left text-xs font-medium text-white/70 hidden md:table-cell">Description</th>
+                <th className="px-2 py-1 text-left text-xs font-medium text-white/70">Date & Time</th>
+                <th className="px-2 py-1 text-left text-xs font-medium text-white/70">Starts In</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {upcomingSchedule.schedule && upcomingSchedule.schedule.map((item: any, index: number) => (
                 <tr key={index} className={`transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: `${index * 100}ms` }}>
-                  <td className="px-2 py-2 whitespace-nowrap">
+                  <td className="px-2 py-1 whitespace-nowrap">
                     {item.programName && <div className="font-medium text-sm">{item.programName}</div>}
                   </td>
-                  <td className="px-2 py-2 hidden md:table-cell">
+                  <td className="px-2 py-1 hidden md:table-cell">
                     {item.description && <div className="text-xs opacity-70">{item.description}</div>}
                   </td>
-                  <td className="px-2 py-2 whitespace-nowrap">
+                  <td className="px-2 py-1 whitespace-nowrap">
                     {item.startDateTime && (
                       <div className="text-xs">
                         {format(new Date(item.startDateTime), 'MMM d, h:mm a')}
                       </div>
                     )}
                   </td>
-                  <td className="px-2 py-2 whitespace-nowrap">
+                  <td className="px-2 py-1 whitespace-nowrap">
                     {item.startsIn && <div className="text-xs font-medium">{item.startsIn}</div>}
                   </td>
                 </tr>
