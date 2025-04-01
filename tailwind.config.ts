@@ -64,9 +64,9 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				quiz: {
-					purple: '#F472B6', // Changed from purple to pink
-					blue: '#FEF08A',   // Changed from blue to yellow
-					pink: '#86EFAC',   // Changed from pink to green
+					purple: '#9b87f5',
+					blue: '#0EA5E9',
+					pink: '#F472B6',
 					orange: '#F97316',
 				}
 			},
@@ -121,10 +121,10 @@ export default {
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-				'quiz-gradient': 'linear-gradient(135deg, #F472B6 0%, #FEF08A 100%)', // Pink to yellow
-				'answer-gradient': 'linear-gradient(135deg, #FEF08A 0%, #86EFAC 100%)', // Yellow to green
-				'leader-gradient': 'linear-gradient(135deg, #86EFAC 0%, #F472B6 100%)', // Green to pink
-				'quiz-pattern': "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cstyle%3E.text %7B font: bold 22px sans-serif; fill: %23F472B680; %7D .emoji %7B font-size: 20px; %7D%3C/style%3E%3Crect width='100%25' height='100%25' fill='%23101020'/%3E%3Ctext x='20' y='40' class='text'%3EBQV 🧠%3C/text%3E%3Ctext x='120' y='80' class='text'%3EBQV 🎮%3C/text%3E%3Ctext x='65' y='120' class='text'%3EBQV 🏆%3C/text%3E%3Ctext x='130' y='160' class='text'%3EBQV 💡%3C/text%3E%3Ctext x='40' y='200' class='text'%3EBQV 🎯%3C/text%3E%3Ctext x='110' y='240' class='text'%3EBQV 📚%3C/text%3E%3Ctext x='20' y='280' class='text'%3EBQV 🔍%3C/text%3E%3C/svg%3E\")",
+				'quiz-gradient': 'linear-gradient(135deg, #9b87f5 0%, #0EA5E9 100%)',
+				'answer-gradient': 'linear-gradient(135deg, #0EA5E9 0%, #F472B6 100%)',
+				'leader-gradient': 'linear-gradient(135deg, #F472B6 0%, #F97316 100%)',
+				'quiz-pattern': "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cstyle%3E.text %7B font: bold 22px sans-serif; fill: %239b87f580; %7D .emoji %7B font-size: 20px; %7D%3C/style%3E%3Crect width='100%25' height='100%25' fill='%23101020'/%3E%3Ctext x='20' y='40' class='text'%3EBQV 🧠%3C/text%3E%3Ctext x='120' y='80' class='text'%3EBQV 🎮%3C/text%3E%3Ctext x='65' y='120' class='text'%3EBQV 🏆%3C/text%3E%3Ctext x='130' y='160' class='text'%3EBQV 💡%3C/text%3E%3Ctext x='40' y='200' class='text'%3EBQV 🎯%3C/text%3E%3Ctext x='110' y='240' class='text'%3EBQV 📚%3C/text%3E%3Ctext x='20' y='280' class='text'%3EBQV 🔍%3C/text%3E%3C/svg%3E\")",
 			}
 		}
 	},
