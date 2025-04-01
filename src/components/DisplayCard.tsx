@@ -167,6 +167,8 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     const image = data.data as any;
     return (
       <div className="flex flex-col items-center gap-1">
+                {image.name && <h2 className="text-xl md:text-2xl font-bold">{image.name}</h2>}
+
         {image.url && (
           <div className="w-full max-w-4xl overflow-hidden rounded-lg aspect-video animate-scale-in">
             <img 
@@ -185,6 +187,8 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     const video = data.data as any;
     return (
       <div className="flex flex-col items-center gap-1">
+                {video.name && <h2 className="text-xl md:text-2xl font-bold">{video.name}</h2>}
+
         {video.url && (
           <div className="w-full max-w-4xl aspect-video bg-black/30 rounded-lg flex items-center justify-center animate-scale-in">
             <Video className="h-12 w-12 text-white/70" />
