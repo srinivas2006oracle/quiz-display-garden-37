@@ -3,7 +3,7 @@ export const animationVariants = {
   question: {
     enter: "animate-fade-in",
     exit: "animate-fade-out",
-    background: "question-background",
+    background: "bg-gradient-to-r from-quiz-purple to-quiz-blue",
   },
   response: {
     enter: "animate-slide-in-right",
@@ -13,7 +13,7 @@ export const animationVariants = {
   image: {
     enter: "animate-scale-in",
     exit: "animate-scale-out",
-    background: "bg-gradient-to-r from-quiz-pink to-quiz-blue",
+    background: "bg-gradient-to-r from-quiz-purple to-quiz-blue",
   },
   video: {
     enter: "animate-fade-in",
@@ -23,22 +23,22 @@ export const animationVariants = {
   answer: {
     enter: "animate-scale-in",
     exit: "animate-scale-out",
-    background: "answer-background",
+    background: "bg-gradient-to-r from-quiz-blue to-quiz-purple",
   },
   fastestAnswers: {
     enter: "animate-fade-in",
     exit: "animate-fade-out",
-    background: "bg-gradient-to-r from-quiz-blue to-quiz-orange",
+    background: "bg-gradient-to-r from-quiz-purple to-quiz-blue",
   },
   leaderboard: {
     enter: "animate-slide-in-right",
     exit: "animate-slide-out-right",
-    background: "leaderboard-background",
+    background: "bg-gradient-to-r from-quiz-blue to-quiz-purple",
   },
   upcomingSchedule: {
     enter: "animate-fade-in",
     exit: "animate-fade-out",
-    background: "bg-gradient-to-r from-quiz-orange to-quiz-purple",
+    background: "bg-gradient-to-r from-quiz-purple to-quiz-blue",
   },
 };
 
