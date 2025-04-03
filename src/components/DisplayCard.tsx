@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
@@ -27,7 +26,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
       if (itemTypes.includes(type)) {
         setAnimatedItems([]);
         const items = type === 'response' ? 
-            Math.min(((data.data as any) || []).length, 3) :
+            Math.min(((data.data as any) || []).length, 6) :
             type === 'fastestAnswers' ? 
               Math.min(((data.data as any).responses || []).length, 5) :
               type === 'leaderboard' ? 
@@ -106,6 +105,8 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderQuestion = () => {
     const question = data.data as any;
+    const optionIdentifiers = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    
     return (
       <div className="flex flex-col items-center gap-1">
         {question.text && <h2 className="text-xl md:text-2xl font-bold">{question.text}</h2>}
@@ -119,7 +120,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
           </div>
         )}
         {question.choices && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 w-full max-w-md">
+          <div className="grid grid-cols-1 gap-1 w-full max-w-md">
             {question.choices.map((choice: string, index: number) => (
               <div 
                 key={index} 
@@ -127,7 +128,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
                   animatedItems.includes(index) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
                 }`}
               >
-                {choice}
+                <span className="font-bold mr-2">{optionIdentifiers[index]})</span> {choice}
               </div>
             ))}
           </div>
@@ -138,12 +139,12 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderResponses = () => {
     const responses = data.data as any;
-    // Limit to displaying 3 responses
-    const displayedResponses = responses.slice(0, 3);
+    // Increase to displaying 6 responses (2 columns of 3)
+    const displayedResponses = responses.slice(0, 6);
     
     return (
       <div className="flex flex-col gap-1">
-        <div className="grid grid-cols-1 gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
           {displayedResponses.map((response: any, index: number) => (
             <div 
               key={index} 
