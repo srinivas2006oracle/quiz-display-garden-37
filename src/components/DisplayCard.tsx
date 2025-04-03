@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
@@ -15,10 +14,10 @@ interface DisplayCardProps {
 
 const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, duration }) => {
   const { type } = data;
+  const displayType = type === 'response' ? 'responses' : type === 'fastestAnswers' ? 'superSix' : type;
   const animation = getAnimationForType(type);
   const animationClass = isVisible ? animation.enter : animation.exit;
   
-  // For sequential animations of list items
   const [animatedItems, setAnimatedItems] = useState<number[]>([]);
   
   useEffect(() => {
@@ -29,18 +28,16 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
         const items = type === 'response' ? 
             Math.min(((data.data as any) || []).length, 6) :
             type === 'fastestAnswers' ? 
-              Math.min(((data.data as any).responses || []).length, 6) : // Changed from 5 to 6
+              Math.min(((data.data as any).responses || []).length, 6) :
               type === 'leaderboard' ? 
                 Math.min(((data.data as any).users || []).length, 10) : 0;
         
-        // Stagger the animations
         for (let i = 0; i < items; i++) {
           setTimeout(() => {
             setAnimatedItems(prev => [...prev, i]);
-          }, i * 150); // 150ms delay between each item
+          }, i * 150);
         }
       } else if (type === 'question') {
-        // For question, animate all choices immediately without staggering
         const choices = ((data.data as any).choices || []).length;
         const allIndexes = Array.from({ length: choices }, (_, i) => i);
         setAnimatedItems(allIndexes);
@@ -53,27 +50,27 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderIcon = () => {
     switch (type) {
       case 'question':
-        return <HelpCircle className="h-6 w-6" />;
+        return <HelpCircle className="h-6 w-6 text-yellow-300" />;
       case 'response':
-        return <MessageCircle className="h-6 w-6" />;
+        return <MessageCircle className="h-6 w-6 text-yellow-300" />;
       case 'image':
-        return <Image className="h-6 w-6" />;
+        return <Image className="h-6 w-6 text-yellow-300" />;
       case 'video':
-        return <Video className="h-6 w-6" />;
+        return <Video className="h-6 w-6 text-yellow-300" />;
       case 'answer':
         return <Check className="h-6 w-6 text-green-400" />;
       case 'fastestAnswers':
-        return <Clock className="h-6 w-6" />;
+        return <Clock className="h-6 w-6 text-yellow-300" />;
       case 'leaderboard':
-        return <Award className="h-6 w-6" />;
+        return <Award className="h-6 w-6 text-yellow-300" />;
       case 'upcomingSchedule':
-        return <Calendar className="h-6 w-6" />;
+        return <Calendar className="h-6 w-6 text-yellow-300" />;
       case 'credits':
-        return <CreditCard className="h-6 w-6" />;
+        return <CreditCard className="h-6 w-6 text-yellow-300" />;
       case 'disclaimer':
-        return <QrCode className="h-6 w-6" />;
+        return <QrCode className="h-6 w-6 text-yellow-300" />;
       default:
-        return <Info className="h-6 w-6" />;
+        return <Info className="h-6 w-6 text-yellow-300" />;
     }
   };
 
@@ -125,7 +122,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
             {question.choices.map((choice: string, index: number) => (
               <div 
                 key={index} 
-                className={`p-2 bg-white/10 rounded-lg text-white font-medium transform transition-all duration-300 ${
+                className={`p-2 bg-white/20 rounded-lg text-white font-medium transform transition-all duration-300 ${
                   animatedItems.includes(index) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
                 }`}
               >
@@ -140,20 +137,18 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderResponses = () => {
     const responses = data.data as any;
-    // Increase to displaying 6 responses (2 columns of 3)
     const displayedResponses = responses.slice(0, 6);
     
     return (
       <div className="flex flex-col gap-1">
         <div className="grid grid-cols-2 gap-1">
           {displayedResponses.map((response: any, index: number) => {
-            // Extract first name for display
             const firstName = response.name ? response.name.split(' ')[0] : '';
             
             return (
               <div 
                 key={index} 
-                className={`p-1 bg-white/10 rounded-lg flex items-center gap-1 transform transition-all duration-300 ${
+                className={`p-1 bg-white/20 rounded-lg flex items-center gap-1 transform transition-all duration-300 ${
                   animatedItems.includes(index) ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-4 scale-95'
                 }`}
               >
@@ -238,15 +233,14 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   };
 
   const getMedalIcon = (index: number) => {
-    if (index === 0) return <Award className="h-4 w-4 text-yellow-300" />; // Gold
-    if (index === 1) return <Award className="h-4 w-4 text-gray-300" />; // Silver
-    if (index === 2) return <Award className="h-4 w-4 text-amber-600" />; // Bronze
+    if (index === 0) return <Award className="h-4 w-4 text-yellow-300" />;
+    if (index === 1) return <Award className="h-4 w-4 text-gray-300" />;
+    if (index === 2) return <Award className="h-4 w-4 text-amber-600" />;
     return null;
   };
 
   const renderFastestAnswers = () => {
     const fastestAnswers = data.data as any;
-    // Changed to display 6 fastest answers
     const displayedResponses = fastestAnswers.responses ? fastestAnswers.responses.slice(0, 6) : [];
     
     return (
@@ -258,7 +252,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
               className={`p-1 rounded-lg flex items-center gap-2 transform transition-all duration-300 ${
                 index === 0 ? 'bg-yellow-500/30' : 
                 index === 1 ? 'bg-gray-400/30' : 
-                index === 2 ? 'bg-amber-700/30' : 'bg-white/10'
+                index === 2 ? 'bg-amber-700/30' : 'bg-white/20'
               } ${
                 animatedItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
@@ -287,7 +281,6 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderLeaderboard = () => {
     const leaderboard = data.data as any;
-    // Limit to displaying 10 leaderboard entries
     const displayedUsers = leaderboard.users ? leaderboard.users.slice(0, 10) : [];
     
     return (
@@ -299,7 +292,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
               className={`p-1 rounded-lg flex items-center gap-2 transform transition-all duration-300 ${
                 index === 0 ? 'bg-yellow-500/30' : 
                 index === 1 ? 'bg-gray-400/30' : 
-                index === 2 ? 'bg-amber-700/30' : 'bg-white/10'
+                index === 2 ? 'bg-amber-700/30' : 'bg-white/20'
               } ${
                 animatedItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               }`}
@@ -450,10 +443,9 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           {renderIcon()}
-          <h3 className="text-lg font-semibold capitalize">{type}</h3>
+          <h3 className="text-lg font-semibold capitalize">{displayType}</h3>
         </div>
         
-        {/* Show countdown timer for question and answer cards */}
         {(type === 'question' ) && duration && (
           <div className="w-32 md:w-48">
             <CountdownTimer duration={duration} isQuestion={true} />
