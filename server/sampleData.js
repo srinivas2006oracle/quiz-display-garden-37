@@ -48,13 +48,13 @@ const sampleImages = [
 // Sample videos
 const sampleVideos = [
   {
-    url: "https://www.example.com/video1.mp4",
+    url: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
     name: "Quiz Highlights",
     description: "Highlights from our previous quiz championship",
     showfor: 15000,
   },
   {
-    url: "https://www.example.com/video2.mp4",
+    url: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
     name: "How to Play",
     description: "A quick tutorial on how to participate in our quiz",
     showfor: 20000,
@@ -96,6 +96,9 @@ const sampleFastestAnswers = {
     { name: "Sarah Wilson2", picture: "https://randomuser.me/api/portraits/women/4.jpg", responseTime: 1.8 },
     { name: "Michael Brown2", picture: "https://randomuser.me/api/portraits/men/5.jpg", responseTime: 2.1 },
     { name: "Emily Davis2", picture: "https://randomuser.me/api/portraits/women/6.jpg", responseTime: 2.3 },
+    { name: "Sarah Wilson3", picture: "https://randomuser.me/api/portraits/women/4.jpg", responseTime: 1.8 },
+    { name: "Michael Brown3", picture: "https://randomuser.me/api/portraits/men/5.jpg", responseTime: 2.1 },
+    { name: "Emily Davis3", picture: "https://randomuser.me/api/portraits/women/6.jpg", responseTime: 2.3 },
   ],
   showfor: 12000,
 };
