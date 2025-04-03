@@ -144,34 +144,29 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     
     return (
       <div className="flex flex-col gap-1">
-        <div className="grid grid-cols-2 gap-1">
-          {displayedResponses.map((response: any, index: number) => {
-            // Extract first name for display
-            const firstName = response.name ? response.name.split(' ')[0] : '';
-            
-            return (
-              <div 
-                key={index} 
-                className={`p-1 bg-white/10 rounded-lg flex items-center gap-1 transform transition-all duration-300 ${
-                  animatedItems.includes(index) ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-4 scale-95'
-                }`}
-              >
-                {response.picture && (
-                  <img 
-                    src={response.picture} 
-                    alt={response.name || 'User'} 
-                    className="w-6 h-6 rounded-full object-cover"
-                  />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+          {displayedResponses.map((response: any, index: number) => (
+            <div 
+              key={index} 
+              className={`p-1 bg-white/10 rounded-lg flex items-center gap-1 transform transition-all duration-300 ${
+                animatedItems.includes(index) ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-4 scale-95'
+              }`}
+            >
+              {response.picture && (
+                <img 
+                  src={response.picture} 
+                  alt={response.name || 'User'} 
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              )}
+              <div>
+                {response.name && <p className="font-medium text-sm">{response.name}</p>}
+                {response.responseTime !== undefined && (
+                  <p className="text-xs opacity-75">{response.responseTime}s</p>
                 )}
-                <div className="overflow-hidden">
-                  {firstName && <p className="font-medium text-xs truncate">{firstName}</p>}
-                  {response.responseTime !== undefined && (
-                    <p className="text-xs opacity-75">{response.responseTime}s</p>
-                  )}
-                </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -430,7 +425,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   return (
     <div
-      className={`glass-card p-2 ${animationClass} ${animation.background} w-full h-full`}
+      className={`glass-card p-4 ${animationClass} ${animation.background} w-full h-full`}
       style={{ 
         opacity: isVisible ? 1 : 0,
         display: isVisible ? 'block' : 'none',
@@ -438,7 +433,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
         overflow: 'auto'
       }}
     >
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           {renderIcon()}
           <h3 className="text-lg font-semibold capitalize">{type}</h3>
