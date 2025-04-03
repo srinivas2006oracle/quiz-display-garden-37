@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
@@ -28,7 +29,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
         const items = type === 'response' ? 
             Math.min(((data.data as any) || []).length, 6) :
             type === 'fastestAnswers' ? 
-              Math.min(((data.data as any).responses || []).length, 5) :
+              Math.min(((data.data as any).responses || []).length, 6) : // Changed from 5 to 6
               type === 'leaderboard' ? 
                 Math.min(((data.data as any).users || []).length, 10) : 0;
         
@@ -204,8 +205,16 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
         {video.name && <h2 className="text-xl md:text-2xl font-bold">{video.name}</h2>}
 
         {video.url && (
-          <div className="w-full max-w-4xl aspect-video bg-black/30 rounded-lg flex items-center justify-center animate-scale-in">
-            <Video className="h-12 w-12 text-white/70" />
+          <div className="w-full max-w-4xl aspect-video bg-black/30 rounded-lg flex items-center justify-center animate-scale-in overflow-hidden">
+            <video 
+              src={video.url} 
+              controls
+              autoPlay
+              muted
+              className="w-full h-full object-contain"
+            >
+              Your browser does not support the video tag.
+            </video>
           </div>
         )}
         {video.description && <p className="text-base opacity-80">{video.description}</p>}
@@ -237,7 +246,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderFastestAnswers = () => {
     const fastestAnswers = data.data as any;
-    // Limit to displaying 5 fastest answers
+    // Changed to display 6 fastest answers
     const displayedResponses = fastestAnswers.responses ? fastestAnswers.responses.slice(0, 6) : [];
     
     return (
