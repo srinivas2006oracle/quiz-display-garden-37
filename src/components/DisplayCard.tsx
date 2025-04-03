@@ -238,7 +238,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderFastestAnswers = () => {
     const fastestAnswers = data.data as any;
     // Limit to displaying 5 fastest answers
-    const displayedResponses = fastestAnswers.responses ? fastestAnswers.responses.slice(0, 5) : [];
+    const displayedResponses = fastestAnswers.responses ? fastestAnswers.responses.slice(0, 6) : [];
     
     return (
       <div className="flex flex-col items-center gap-1">

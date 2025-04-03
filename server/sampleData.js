@@ -179,7 +179,8 @@ function getRandomQuestion() {
 
 function getRandomResponse() {
   // Randomly select 3-5 responses to display
-  const numberOfResponses = Math.floor(Math.random() * 3) + 3; // 3 to 5 responses
+  //const numberOfResponses = Math.floor(Math.random() * 3) + 3; // 3 to 5 responses
+  const numberOfResponses = 6;
   const shuffledResponses = [...sampleResponses].sort(() => 0.5 - Math.random());
   const selectedResponses = shuffledResponses.slice(0, numberOfResponses);
   
