@@ -1,0 +1,263 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= game.gameTitle %> | Quiz Game Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .question-card {
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+      margin-bottom: 1rem;
+    }
+    .question-card:hover {
+      transform: translateY(-2px);
+    }
+    .active-question {
+      border: 2px solid #198754;
+    }
+    .choice-text {
+      font-size: 0.9rem;
+    }
+    .correct-choice {
+      background-color: rgba(25, 135, 84, 0.2);
+      border-left: 4px solid #198754;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" href="/admin">Quiz Game Management</a>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1><%= game.gameTitle %></h1>
+      <div>
+        <a href="/admin" class="btn btn-outline-secondary me-2">Back to Games</a>
+        <% if (game.isGameOpen) { %>
+          <button 
+            class="btn btn-danger stop-game" 
+            data-game-id="<%= game._id %>">
+            Stop Game
+          </button>
+        <% } else { %>
+          <button 
+            class="btn btn-success start-game" 
+            data-game-id="<%= game._id %>">
+            Start Game
+          </button>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Game Status</h5>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Status:</span>
+                <span class="badge <%= game.isGameOpen ? 'bg-success' : 'bg-secondary' %>">
+                  <%= game.isGameOpen ? 'LIVE' : 'CLOSED' %>
+                </span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Total Questions:</span>
+                <span><%= game.questions.length %></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Current Question:</span>
+                <span><%= game.activeQuestionIndex !== undefined ? game.activeQuestionIndex + 1 : 'N/A' %></span>
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer">
+            <% if (game.isGameOpen) { %>
+              <button 
+                class="btn btn-primary w-100 next-question" 
+                data-game-id="<%= game._id %>">
+                Next Question
+              </button>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Game Timeline</h5>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Scheduled Start:</span>
+                <span><%= game.gameScheduledStart ? new Date(game.gameScheduledStart).toLocaleString() : 'Not set' %></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Actual Start:</span>
+                <span><%= game.gameStartedAt ? new Date(game.gameStartedAt).toLocaleString() : 'Not started' %></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Current Question Started:</span>
+                <span><%= game.questionStartedAt ? new Date(game.questionStartedAt).toLocaleString() : 'N/A' %></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
+                <span>Game Ended:</span>
+                <span><%= game.gameEndedAt ? new Date(game.gameEndedAt).toLocaleString() : 'Not ended' %></span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="mb-3">Questions</h2>
+    <div class="accordion" id="questionsAccordion">
+      <% if (game.questions && game.questions.length > 0) { %>
+        <% game.questions.forEach((question, index) => { %>
+          <div class="accordion-item question-card <%= index === game.activeQuestionIndex && game.isGameOpen ? 'active-question' : '' %>">
+            <h2 class="accordion-header" id="heading<%= index %>">
+              <button class="accordion-button <%= index === 0 ? '' : 'collapsed' %>" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>" aria-expanded="<%= index === 0 ? 'true' : 'false' %>" aria-controls="collapse<%= index %>">
+                <div class="d-flex justify-content-between w-100 pe-3">
+                  <span><strong>Q<%= index + 1 %>:</strong> <%= question.questionText %></span>
+                  <% if (index === game.activeQuestionIndex && game.isQuestionOpen) { %>
+                    <span class="badge bg-success">ACTIVE</span>
+                  <% } %>
+                </div>
+              </button>
+            </h2>
+            <div id="collapse<%= index %>" class="accordion-collapse collapse <%= index === 0 ? 'show' : '' %>" aria-labelledby="heading<%= index %>" data-bs-parent="#questionsAccordion">
+              <div class="accordion-body">
+                <% if (question.questionImageUrl) { %>
+                  <img src="<%= question.questionImageUrl %>" alt="Question Image" class="img-fluid mb-3" style="max-height: 200px;">
+                <% } %>
+                
+                <h6 class="mb-3">Choices:</h6>
+                <ul class="list-group mb-3">
+                  <% question.choices.forEach((choice, choiceIndex) => { %>
+                    <li class="list-group-item <%= choice.isCorrectChoice ? 'correct-choice' : '' %>">
+                      <div class="d-flex justify-content-between">
+                        <span class="choice-text">
+                          <strong><%= String.fromCharCode(65 + choiceIndex) %>.</strong> 
+                          <%= choice.choiceText %>
+                          <% if (choice.isCorrectChoice) { %>
+                            <span class="badge bg-success ms-2">Correct</span>
+                          <% } %>
+                        </span>
+                      </div>
+                    </li>
+                  <% }); %>
+                </ul>
+                
+                <% if (question.answerExplanation) { %>
+                  <div class="card bg-light">
+                    <div class="card-body">
+                      <h6 class="card-title">Explanation:</h6>
+                      <p class="card-text"><%= question.answerExplanation %></p>
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <div class="alert alert-info">
+          No questions found for this game.
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Handle start game button click
+      const startGameBtn = document.querySelector('.start-game');
+      if (startGameBtn) {
+        startGameBtn.addEventListener('click', function() {
+          const gameId = this.getAttribute('data-game-id');
+          
+          fetch(`/admin/game/start/${gameId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              window.location.reload();
+            } else {
+              alert('Error starting game: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error starting game');
+          });
+        });
+      }
+      
+      // Handle stop game button click
+      const stopGameBtn = document.querySelector('.stop-game');
+      if (stopGameBtn) {
+        stopGameBtn.addEventListener('click', function() {
+          const gameId = this.getAttribute('data-game-id');
+          
+          fetch(`/admin/game/stop/${gameId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              window.location.reload();
+            } else {
+              alert('Error stopping game: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error stopping game');
+          });
+        });
+      }
+      
+      // Handle next question button click
+      const nextQuestionBtn = document.querySelector('.next-question');
+      if (nextQuestionBtn) {
+        nextQuestionBtn.addEventListener('click', function() {
+          const gameId = this.getAttribute('data-game-id');
+          
+          fetch(`/admin/question/next/${gameId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              window.location.reload();
+            } else {
+              alert('Info: ' + (data.message || 'Unknown error'));
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error moving to next question');
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>
