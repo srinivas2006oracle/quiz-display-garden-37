@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -110,6 +109,11 @@
                   class="btn btn-warning show-answer" 
                   data-game-id="<%= game._id %>">
                   Show Answer
+                </button>
+                <button 
+                  class="btn btn-info refresh-responses" 
+                  data-game-id="<%= game._id %>">
+                  Refresh Responses
                 </button>
               </div>
               
@@ -398,6 +402,33 @@
               console.error('Error:', error);
               alert(`Error displaying ${type}`);
             });
+          });
+        });
+      }
+      
+      // Handle refresh responses button click
+      const refreshResponsesBtn = document.querySelector('.refresh-responses');
+      if (refreshResponsesBtn) {
+        refreshResponsesBtn.addEventListener('click', function() {
+          const gameId = this.getAttribute('data-game-id');
+          
+          fetch(`/admin/question/refresh-responses/${gameId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              console.log('Responses refreshed');
+            } else {
+              alert('Info: ' + (data.message || 'Unknown error'));
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error refreshing responses');
           });
         });
       }

@@ -1,4 +1,3 @@
-
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -524,18 +523,59 @@ function createGameSequence(game) {
       }
     };
     
-    // Empty responses for now
-    const responseData = {
+    // Fetch stored responses for this question
+    let responseData = {
       type: 'responses',
       data: []
     };
+    
+    // Check if question has any responses stored
+    let hasResponses = false;
+    question.choices.forEach(choice => {
+      if (choice.choiceResponses && choice.choiceResponses.length > 0) {
+        hasResponses = true;
+      }
+    });
+    
+    if (hasResponses) {
+      // Extract responses from all choices
+      const allResponses = [];
+      question.choices.forEach((choice, choiceIndex) => {
+        if (choice.choiceResponses && choice.choiceResponses.length > 0) {
+          choice.choiceResponses.forEach(response => {
+            allResponses.push({
+              name: response.userName || `User ${allResponses.length + 1}`,
+              picture: response.ytProfilePicUrl || null,
+              responseTime: response.responseTime,
+              optionIndex: choiceIndex
+            });
+          });
+        }
+      });
+      
+      // Sort by response time and take first 6
+      const sortedResponses = allResponses.sort((a, b) => 
+        parseFloat(a.responseTime) - parseFloat(b.responseTime)
+      );
+      
+      responseData.data = sortedResponses.slice(0, 6);
+    }
     
     // Add question and responses pair
     currentGameSequence.push({ 
       primary: questionData, 
       secondary: responseData, 
       duration: 30000,
-      questionIndex: index 
+      questionIndex: index,
+      responsePool: question.choices.flatMap(choice => 
+        (choice.choiceResponses || []).map(response => ({
+          name: response.userName || `Unknown User`,
+          picture: response.ytProfilePicUrl || null,
+          responseTime: response.responseTime,
+          optionIndex: choice.choiceIndex
+        }))
+      ),
+      responsePageIndex: 0
     });
     
     // Find correct choice
@@ -550,13 +590,31 @@ function createGameSequence(game) {
       }
     };
     
-    // Empty fastest answers for now
+    // SuperSix data - fastest correct answers
     const fastestAnswersData = {
       type: 'superSix',
       data: {
         responses: []
       }
     };
+    
+    // If there's a correct choice with responses, populate SuperSix
+    if (correctChoiceIndex >= 0 && 
+        question.choices[correctChoiceIndex].choiceResponses && 
+        question.choices[correctChoiceIndex].choiceResponses.length > 0) {
+      
+      // Extract and sort correct responses
+      const correctResponses = question.choices[correctChoiceIndex].choiceResponses.map(response => ({
+        name: response.userName || 'Anonymous',
+        picture: response.ytProfilePicUrl || null,
+        responseTime: response.responseTime
+      }));
+      
+      // Sort by response time and take first 6
+      fastestAnswersData.data.responses = correctResponses
+        .sort((a, b) => parseFloat(a.responseTime) - parseFloat(b.responseTime))
+        .slice(0, 6);
+    }
     
     // Add answer and fastest answers pair
     currentGameSequence.push({ 
@@ -592,128 +650,62 @@ function createGameSequence(game) {
   return currentGameSequence;
 }
 
-// Function to update responses for a question
-async function updateResponsesForQuestion(questionItem) {
-  if (!activeGame || questionItem.questionIndex === undefined) {
-    return questionItem;
-  }
-  
+// Handle response pagination - Update for the next 6 responses
+app.post('/admin/question/refresh-responses/:gameId', async (req, res) => {
   try {
-    // Get the current question
-    const question = activeGame.questions[questionItem.questionIndex];
-    if (!question) return questionItem;
+    const { gameId } = req.params;
+    const game = await QuizGame.findById(gameId);
     
-    // Get all responses for this question
-    const allResponses = await AllResponse.find({
-      systemTimeStamp: { $gte: activeGame.questionStartedAt }
-    }).sort({ responseTime: 1 });
-    
-    // Process responses (consider only first response per user)
-    const processedResponses = [];
-    const seenUsers = new Set();
-    
-    for (const response of allResponses) {
-      if (seenUsers.has(response.ytChannelId)) continue;
-      
-      // Check if message is a valid option (a, b, c, d, A, B, C, D)
-      const firstChar = (response.userName || '').charAt(0).toLowerCase();
-      let optionIndex = -1;
-      
-      if (firstChar === 'a') optionIndex = 0;
-      else if (firstChar === 'b') optionIndex = 1;
-      else if (firstChar === 'c') optionIndex = 2;
-      else if (firstChar === 'd') optionIndex = 3;
-      
-      if (optionIndex >= 0 && optionIndex < question.choices.length) {
-        seenUsers.add(response.ytChannelId);
-        
-        // Calculate response time
-        const responseTime = (response.ytTimeStamp - activeGame.questionStartedAt) / 1000;
-        
-        processedResponses.push({
-          name: response.userName || `User ${processedResponses.length + 1}`,
-          picture: response.ytProfilePicUrl || null,
-          responseTime: responseTime.toFixed(1),
-          optionIndex
-        });
-      }
+    if (!game || !game.isGameOpen) {
+      return res.status(400).json({ success: false, message: 'Game not found or not open' });
     }
     
-    // Return updated item
-    return {
-      ...questionItem,
-      secondary: {
+    const questionIndex = game.activeQuestionIndex;
+    if (questionIndex < 0 || questionIndex >= game.questions.length) {
+      return res.status(400).json({ success: false, message: 'Invalid question index' });
+    }
+    
+    // Find the current question in the sequence
+    const questionItemIndex = currentGameSequence.findIndex(item => 
+      item.primary?.type === 'question' && item.questionIndex === questionIndex
+    );
+    
+    if (questionItemIndex < 0) {
+      return res.status(400).json({ success: false, message: 'Question not found in sequence' });
+    }
+    
+    const questionItem = currentGameSequence[questionItemIndex];
+    
+    // If we have a response pool, get the next page of responses
+    if (questionItem.responsePool && questionItem.responsePool.length > 0) {
+      questionItem.responsePageIndex = (questionItem.responsePageIndex || 0) + 1;
+      const startIndex = (questionItem.responsePageIndex * 6) % questionItem.responsePool.length;
+      
+      // Get next 6 responses or wrap around
+      const nextResponses = [];
+      for (let i = 0; i < 6; i++) {
+        const index = (startIndex + i) % questionItem.responsePool.length;
+        nextResponses.push(questionItem.responsePool[index]);
+      }
+      
+      // Update the responses in the question item
+      questionItem.secondary = {
         type: 'responses',
-        data: processedResponses.slice(0, 6)  // Limit to 6 responses
-      }
-    };
-  } catch (err) {
-    console.error('Error updating responses:', err);
-    return questionItem;
-  }
-}
-
-// Function to calculate and update SuperSix
-async function updateSuperSix(questionIndex) {
-  if (!activeGame) return null;
-  
-  try {
-    // Get the current question
-    const question = activeGame.questions[questionIndex];
-    if (!question) return null;
-    
-    // Find the correct choice index
-    const correctChoiceIndex = question.choices.findIndex(choice => choice.isCorrectChoice);
-    if (correctChoiceIndex < 0) return null;
-    
-    // Get all responses for this question
-    const allResponses = await AllResponse.find({
-      systemTimeStamp: { $gte: activeGame.questionStartedAt }
-    }).sort({ responseTime: 1 });
-    
-    // Process responses (consider only first response per user)
-    const processedResponses = [];
-    const seenUsers = new Set();
-    
-    for (const response of allResponses) {
-      if (seenUsers.has(response.ytChannelId)) continue;
+        data: nextResponses
+      };
       
-      // Check if message is a valid option (a, b, c, d, A, B, C, D)
-      const firstChar = (response.userName || '').charAt(0).toLowerCase();
-      let optionIndex = -1;
+      // Send the updated responses to all clients
+      io.emit('display_update', questionItem);
       
-      if (firstChar === 'a') optionIndex = 0;
-      else if (firstChar === 'b') optionIndex = 1;
-      else if (firstChar === 'c') optionIndex = 2;
-      else if (firstChar === 'd') optionIndex = 3;
-      
-      // Only consider correct answers
-      if (optionIndex === correctChoiceIndex) {
-        seenUsers.add(response.ytChannelId);
-        
-        // Calculate response time
-        const responseTime = (response.ytTimeStamp - activeGame.questionStartedAt) / 1000;
-        
-        processedResponses.push({
-          name: response.userName || `User ${processedResponses.length + 1}`,
-          picture: response.ytProfilePicUrl || null,
-          responseTime: responseTime.toFixed(1)
-        });
-      }
+      res.json({ success: true, message: 'Responses refreshed' });
+    } else {
+      res.json({ success: false, message: 'No responses available' });
     }
-    
-    // Sort by response time and return top 6
-    return {
-      type: 'superSix',
-      data: {
-        responses: processedResponses.slice(0, 6)  // Top 6 fastest correct answers
-      }
-    };
   } catch (err) {
-    console.error('Error updating SuperSix:', err);
-    return null;
+    console.error('Error refreshing responses:', err);
+    res.status(500).json({ success: false, message: 'Error refreshing responses' });
   }
-}
+});
 
 // Define the port
 const PORT = process.env.PORT || 5001;
