@@ -102,7 +102,7 @@ const QuizGameSchema = new Schema({
   gameScheduledEnd: Date,
   gameStartedAt: Date,
   gameEndedAt: Date,
-  activeQuestionIndex: { type: Number, min: 0, default: 0 },
+  activeQuestionIndex: { type: Number, min: -1, default: -1 },
   questionStartedAt: Date,
   isQuestionOpen: { type: Boolean, default: false },
   correctChoiceIndex: { type: Number, min: -1, default: -1 },
@@ -167,7 +167,7 @@ app.post('/admin/game/start/:id', async (req, res) => {
     
     game.isGameOpen = true;
     game.gameStartedAt = new Date();
-    game.activeQuestionIndex = 0;
+    game.activeQuestionIndex = -1;
     await game.save();
     
     // Set as active game
