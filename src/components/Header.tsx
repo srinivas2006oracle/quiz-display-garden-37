@@ -7,6 +7,9 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ title = "BQV Quiz" }) => {
+  // Get the current server URL to ensure we link to the correct admin path
+  const serverUrl = window.location.origin;
+  
   return (
     <header className="w-full p-2 flex items-center justify-between bg-black/50 backdrop-blur-sm">
       <div className="flex items-center gap-2">
@@ -15,12 +18,12 @@ const Header: React.FC<HeaderProps> = ({ title = "BQV Quiz" }) => {
       </div>
       <div>
         <a 
-          href="/admin" 
+          href={`${serverUrl}/admin`}
           target="_blank" 
           rel="noopener noreferrer"
           className="text-sm text-white/70 hover:text-white transition-colors"
         >
-          Admin
+          Admin Dashboard
         </a>
       </div>
     </header>
