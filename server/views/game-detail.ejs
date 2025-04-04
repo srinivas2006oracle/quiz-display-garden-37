@@ -26,6 +26,14 @@
       background-color: rgba(25, 135, 84, 0.2);
       border-left: 4px solid #198754;
     }
+    .manual-controls {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+    .manual-controls .btn {
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -40,6 +48,12 @@
       <h1><%= game.gameTitle %></h1>
       <div>
         <a href="/admin" class="btn btn-outline-secondary me-2">Back to Games</a>
+        <button 
+          class="btn btn-outline-info toggle-mode me-2" 
+          data-game-id="<%= game._id %>"
+          data-current-mode="<%= game.gameMode || 'automatic' %>">
+          <%= game.gameMode === 'automatic' ? 'Switch to Manual' : 'Switch to Automatic' %>
+        </button>
         <% if (game.isGameOpen) { %>
           <button 
             class="btn btn-danger stop-game" 
@@ -69,6 +83,12 @@
                 </span>
               </li>
               <li class="list-group-item d-flex justify-content-between">
+                <span>Mode:</span>
+                <span class="badge bg-info">
+                  <%= game.gameMode === 'automatic' ? 'AUTOMATIC' : 'MANUAL' %>
+                </span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between">
                 <span>Total Questions:</span>
                 <span><%= game.questions.length %></span>
               </li>
@@ -79,12 +99,51 @@
             </ul>
           </div>
           <div class="card-footer">
-            <% if (game.isGameOpen) { %>
-              <button 
-                class="btn btn-primary w-100 next-question" 
-                data-game-id="<%= game._id %>">
-                Next Question
-              </button>
+            <% if (game.isGameOpen && game.gameMode === 'manual') { %>
+              <div class="d-flex gap-2 mb-3">
+                <button 
+                  class="btn btn-primary next-question" 
+                  data-game-id="<%= game._id %>">
+                  Next Question
+                </button>
+                <button 
+                  class="btn btn-warning show-answer" 
+                  data-game-id="<%= game._id %>">
+                  Show Answer
+                </button>
+              </div>
+              
+              <div class="manual-controls">
+                <button 
+                  class="btn btn-outline-primary display-item" 
+                  data-game-id="<%= game._id %>"
+                  data-type="image">
+                  Show Image
+                </button>
+                <button 
+                  class="btn btn-outline-primary display-item" 
+                  data-game-id="<%= game._id %>"
+                  data-type="disclaimer">
+                  Show Disclaimer
+                </button>
+                <button 
+                  class="btn btn-outline-primary display-item" 
+                  data-game-id="<%= game._id %>"
+                  data-type="video">
+                  Show Video
+                </button>
+                <button 
+                  class="btn btn-outline-primary display-item" 
+                  data-game-id="<%= game._id %>"
+                  data-type="credits">
+                  Show Credits
+                </button>
+              </div>
+            <% } else if (game.isGameOpen && game.gameMode === 'automatic') { %>
+              <div class="alert alert-info text-center">
+                Game is running in automatic mode.<br>
+                Sequence advances automatically.
+              </div>
             <% } %>
           </div>
         </div>
@@ -254,6 +313,91 @@
           .catch(error => {
             console.error('Error:', error);
             alert('Error moving to next question');
+          });
+        });
+      }
+      
+      // Handle show answer button click
+      const showAnswerBtn = document.querySelector('.show-answer');
+      if (showAnswerBtn) {
+        showAnswerBtn.addEventListener('click', function() {
+          const gameId = this.getAttribute('data-game-id');
+          
+          fetch(`/admin/answer/show/${gameId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Don't reload page since we're just showing the answer
+              console.log('Answer displayed');
+            } else {
+              alert('Info: ' + (data.message || 'Unknown error'));
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error showing answer');
+          });
+        });
+      }
+      
+      // Handle toggle mode button click
+      const toggleModeBtn = document.querySelector('.toggle-mode');
+      if (toggleModeBtn) {
+        toggleModeBtn.addEventListener('click', function() {
+          const gameId = this.getAttribute('data-game-id');
+          
+          fetch(`/admin/game/toggle-mode/${gameId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              window.location.reload();
+            } else {
+              alert('Error toggling game mode: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error toggling game mode');
+          });
+        });
+      }
+      
+      // Handle display item buttons
+      const displayItemBtns = document.querySelectorAll('.display-item');
+      if (displayItemBtns.length) {
+        displayItemBtns.forEach(button => {
+          button.addEventListener('click', function() {
+            const gameId = this.getAttribute('data-game-id');
+            const type = this.getAttribute('data-type');
+            
+            fetch(`/admin/display/${type}/${gameId}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                console.log(`${type} displayed`);
+              } else {
+                alert('Info: ' + (data.message || 'Unknown error'));
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert(`Error displaying ${type}`);
+            });
           });
         });
       }

@@ -110,7 +110,8 @@ const QuizGameSchema = new Schema({
   liveChatdIDs: [String],
   isGameOpen: { type: Boolean, default: false },
   quizId: { type: Schema.Types.ObjectId, ref: 'Quiz' },
-  questions: [QuestionSchema]
+  questions: [QuestionSchema],
+  gameMode: { type: String, enum: ['automatic', 'manual'], default: 'automatic' }
 });
 
 // Define MongoDB Models
@@ -125,6 +126,7 @@ let activeGame = null;
 let currentGameSequence = [];
 let currentSequenceIndex = 0;
 let responseRefreshTimer;
+let autoGameTimer = null;
 
 // Game Management Routes
 app.get('/admin', async (req, res) => {
@@ -157,6 +159,12 @@ app.post('/admin/game/start/:id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Game not found' });
     }
     
+    // Clear any existing timer
+    if (autoGameTimer) {
+      clearTimeout(autoGameTimer);
+      autoGameTimer = null;
+    }
+    
     game.isGameOpen = true;
     game.gameStartedAt = new Date();
     game.activeQuestionIndex = 0;
@@ -167,9 +175,15 @@ app.post('/admin/game/start/:id', async (req, res) => {
     
     // Create game sequence
     createGameSequence(game);
+    currentSequenceIndex = 0;
     
     // Notify all clients
     io.emit('game_started', { gameId: game._id, gameTitle: game.gameTitle });
+    
+    // If automatic mode, start the sequence
+    if (game.gameMode === 'automatic') {
+      startAutomaticSequence(game);
+    }
     
     res.json({ success: true });
   } catch (err) {
@@ -194,6 +208,12 @@ app.post('/admin/game/stop/:id', async (req, res) => {
     if (activeGame && activeGame._id.toString() === game._id.toString()) {
       activeGame = null;
       clearInterval(responseRefreshTimer);
+      
+      // Clear automatic sequence timer
+      if (autoGameTimer) {
+        clearTimeout(autoGameTimer);
+        autoGameTimer = null;
+      }
     }
     
     // Notify all clients
@@ -203,6 +223,36 @@ app.post('/admin/game/stop/:id', async (req, res) => {
   } catch (err) {
     console.error('Error stopping game:', err);
     res.status(500).json({ success: false, message: 'Error stopping game' });
+  }
+});
+
+app.post('/admin/game/toggle-mode/:id', async (req, res) => {
+  try {
+    const game = await QuizGame.findById(req.params.id);
+    if (!game) {
+      return res.status(404).json({ success: false, message: 'Game not found' });
+    }
+    
+    // Toggle the game mode
+    game.gameMode = game.gameMode === 'automatic' ? 'manual' : 'automatic';
+    await game.save();
+    
+    // If the game is active and now in automatic mode, start the sequence
+    if (game.isGameOpen && game.gameMode === 'automatic' && 
+        activeGame && activeGame._id.toString() === game._id.toString()) {
+      startAutomaticSequence(game);
+    }
+    
+    // If switching to manual mode, clear any automatic timers
+    if (game.gameMode === 'manual' && autoGameTimer) {
+      clearTimeout(autoGameTimer);
+      autoGameTimer = null;
+    }
+    
+    res.json({ success: true, mode: game.gameMode });
+  } catch (err) {
+    console.error('Error toggling game mode:', err);
+    res.status(500).json({ success: false, message: 'Error toggling game mode' });
   }
 });
 
@@ -217,29 +267,151 @@ app.post('/admin/question/next/:gameId', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Game is not open' });
     }
     
-    // Close current question if open
-    if (game.isQuestionOpen) {
-      game.isQuestionOpen = false;
-      await game.save();
-    }
-    
-    // Move to next question
-    if (game.activeQuestionIndex < game.questions.length - 1) {
-      game.activeQuestionIndex += 1;
-      game.questionStartedAt = new Date();
-      game.isQuestionOpen = true;
-      await game.save();
+    // In manual mode, admin controls the flow
+    if (game.gameMode === 'manual') {
+      // Close current question if open
+      if (game.isQuestionOpen) {
+        game.isQuestionOpen = false;
+        await game.save();
+      }
       
-      // Update active game
-      activeGame = game;
-      
-      res.json({ success: true, activeQuestionIndex: game.activeQuestionIndex });
+      // Move to next question
+      if (game.activeQuestionIndex < game.questions.length - 1) {
+        game.activeQuestionIndex += 1;
+        game.questionStartedAt = new Date();
+        game.isQuestionOpen = true;
+        await game.save();
+        
+        // Update active game
+        activeGame = game;
+        
+        // Send current question to all clients
+        const questionItem = currentGameSequence.find(item => 
+          item.primary?.type === 'question' && 
+          item.questionIndex === game.activeQuestionIndex
+        );
+        
+        if (questionItem) {
+          io.emit('display_update', questionItem);
+        }
+        
+        res.json({ success: true, activeQuestionIndex: game.activeQuestionIndex });
+      } else {
+        res.json({ success: false, message: 'No more questions' });
+      }
     } else {
-      res.json({ success: false, message: 'No more questions' });
+      res.json({ success: false, message: 'Cannot manually advance question in automatic mode' });
     }
   } catch (err) {
     console.error('Error advancing to next question:', err);
     res.status(500).json({ success: false, message: 'Error advancing to next question' });
+  }
+});
+
+app.post('/admin/answer/show/:gameId', async (req, res) => {
+  try {
+    const game = await QuizGame.findById(req.params.gameId);
+    if (!game) {
+      return res.status(404).json({ success: false, message: 'Game not found' });
+    }
+    
+    if (!game.isGameOpen) {
+      return res.status(400).json({ success: false, message: 'Game is not open' });
+    }
+    
+    // In manual mode, admin controls the flow
+    if (game.gameMode === 'manual') {
+      // Close current question
+      game.isQuestionOpen = false;
+      await game.save();
+      
+      // Send answer to all clients
+      const currentQuestionIndex = game.activeQuestionIndex;
+      const answerItemIndex = currentGameSequence.findIndex(item => 
+        item.primary?.type === 'answer' && 
+        item.questionIndex === currentQuestionIndex
+      );
+      
+      if (answerItemIndex >= 0) {
+        io.emit('display_update', currentGameSequence[answerItemIndex]);
+        
+        // Show leaderboard after answer
+        setTimeout(() => {
+          const leaderboardItemIndex = currentGameSequence.findIndex(item => 
+            item.primary?.type === 'leaderboard' && 
+            item.questionIndex === currentQuestionIndex
+          );
+          
+          if (leaderboardItemIndex >= 0) {
+            io.emit('display_update', currentGameSequence[leaderboardItemIndex]);
+          }
+        }, 10000); // Show leaderboard 10 seconds after answer
+        
+        res.json({ success: true, message: 'Answer displayed' });
+      } else {
+        res.json({ success: false, message: 'Answer not found' });
+      }
+    } else {
+      res.json({ success: false, message: 'Cannot manually show answer in automatic mode' });
+    }
+  } catch (err) {
+    console.error('Error showing answer:', err);
+    res.status(500).json({ success: false, message: 'Error showing answer' });
+  }
+});
+
+app.post('/admin/display/:type/:gameId', async (req, res) => {
+  try {
+    const { type, gameId } = req.params;
+    const game = await QuizGame.findById(gameId);
+    
+    if (!game) {
+      return res.status(404).json({ success: false, message: 'Game not found' });
+    }
+    
+    if (!game.isGameOpen) {
+      return res.status(400).json({ success: false, message: 'Game is not open' });
+    }
+    
+    // In manual mode, admin controls the flow
+    if (game.gameMode === 'manual') {
+      let displayItem = null;
+      
+      // Get the display item based on type
+      switch (type) {
+        case 'image':
+          displayItem = { primary: sampleData.getRandomImage(), duration: 10000 };
+          break;
+        case 'disclaimer':
+          displayItem = { primary: sampleData.getDisclaimer(), duration: 10000 };
+          break;
+        case 'video':
+          displayItem = { primary: sampleData.getRandomVideo(), duration: 10000 };
+          break;
+        case 'credits':
+          displayItem = { 
+            primary: sampleData.getCredits(), 
+            secondary: sampleData.getRandomUpcomingSchedule(), 
+            duration: 20000 
+          };
+          break;
+        default:
+          return res.status(400).json({ success: false, message: 'Invalid display type' });
+      }
+      
+      // Send display item to all clients
+      if (displayItem) {
+        io.emit('display_update', displayItem);
+        res.json({ success: true, message: `${type} displayed` });
+      } else {
+        res.json({ success: false, message: 'Display item not found' });
+      }
+    } else {
+      res.json({ success: false, message: 'Cannot manually control display in automatic mode' });
+    }
+  } catch (err) {
+    console.error('Error displaying content:', err);
+    res.status(500).json({ success: false, message: 'Error displaying content' });
   }
 });
 
@@ -253,7 +425,17 @@ io.on('connection', (socket) => {
   
   // Start game sequence if there's an active game
   if (activeGame && activeGame.isGameOpen) {
-    startQuizSequence(socket);
+    // In automatic mode, send current sequence item
+    if (activeGame.gameMode === 'automatic') {
+      if (currentSequenceIndex < currentGameSequence.length) {
+        socket.emit('display_update', currentGameSequence[currentSequenceIndex]);
+      }
+    } else {
+      // In manual mode, send last displayed item or initial item
+      if (currentSequenceIndex < currentGameSequence.length) {
+        socket.emit('display_update', currentGameSequence[0]); // Send first item as default
+      }
+    }
   }
   
   // Handle disconnection
@@ -262,6 +444,58 @@ io.on('connection', (socket) => {
     activeConnections.delete(socket.id);
   });
 });
+
+// Function to run the automatic sequence for a game
+function startAutomaticSequence(game) {
+  if (!game || !game.isGameOpen || currentGameSequence.length === 0) {
+    console.log('No active game or sequence to display');
+    return;
+  }
+  
+  // Start from the beginning
+  currentSequenceIndex = 0;
+  
+  const advanceSequence = () => {
+    if (currentSequenceIndex < currentGameSequence.length) {
+      const currentItem = currentGameSequence[currentSequenceIndex];
+      io.emit('display_update', currentItem);
+      
+      // If this is a question, update game's active question index
+      if (currentItem.primary?.type === 'question' && currentItem.questionIndex !== undefined) {
+        game.activeQuestionIndex = currentItem.questionIndex;
+        game.questionStartedAt = new Date();
+        game.isQuestionOpen = true;
+        game.save().catch(err => console.error('Error saving game state:', err));
+      }
+      
+      // If this is an answer, close the question
+      if (currentItem.primary?.type === 'answer') {
+        game.isQuestionOpen = false;
+        game.save().catch(err => console.error('Error saving game state:', err));
+      }
+      
+      // Move to the next item after the specified duration
+      currentSequenceIndex++;
+      
+      // Don't advance beyond the last item
+      if (currentSequenceIndex < currentGameSequence.length) {
+        autoGameTimer = setTimeout(advanceSequence, currentItem.duration);
+      } else {
+        console.log('Sequence completed, staying on last screen');
+        
+        // If this is the end of the game, update game status
+        if (game.isGameOpen) {
+          game.isGameOpen = false;
+          game.gameEndedAt = new Date();
+          game.save().catch(err => console.error('Error saving game state:', err));
+        }
+      }
+    }
+  };
+  
+  // Start the sequence
+  advanceSequence();
+}
 
 // Function to create the display sequence for a game
 function createGameSequence(game) {
@@ -328,7 +562,8 @@ function createGameSequence(game) {
     currentGameSequence.push({ 
       primary: answerData, 
       secondary: fastestAnswersData, 
-      duration: 10000 
+      duration: 10000,
+      questionIndex: index
     });
     
     // Empty leaderboard for now
@@ -342,7 +577,8 @@ function createGameSequence(game) {
     // Add leaderboard
     currentGameSequence.push({ 
       primary: leaderboardData, 
-      duration: 10000 
+      duration: 10000,
+      questionIndex: index
     });
   });
   
@@ -354,61 +590,6 @@ function createGameSequence(game) {
   });
   
   return currentGameSequence;
-}
-
-// Function to run the quiz sequence for a connected client
-function startQuizSequence(socket) {
-  if (!activeGame || !activeGame.isGameOpen || currentGameSequence.length === 0) {
-    console.log('No active game or sequence to display');
-    return;
-  }
-  
-  let sequenceIndex = currentSequenceIndex;
-  
-  const displayNextItem = () => {
-    if (sequenceIndex >= currentGameSequence.length) {
-      // Reset sequence when it completes
-      sequenceIndex = 0;
-    }
-    
-    const currentItem = currentGameSequence[sequenceIndex];
-    
-    // If this is a question with responses, update with latest responses
-    if (currentItem.primary?.type === 'question' && currentItem.secondary?.type === 'responses' && 
-        activeGame && currentItem.questionIndex === activeGame.activeQuestionIndex) {
-      
-      updateResponsesForQuestion(currentItem).then(updatedItem => {
-        socket.emit('display_update', updatedItem);
-      });
-      
-      // Setup a refresh timer that updates responses every 5 seconds
-      if (responseRefreshTimer) clearInterval(responseRefreshTimer);
-      
-      responseRefreshTimer = setInterval(async () => {
-        if (activeGame && activeGame.isQuestionOpen) {
-          const updatedItem = await updateResponsesForQuestion(currentItem);
-          io.emit('display_update', updatedItem);
-        } else {
-          clearInterval(responseRefreshTimer);
-        }
-      }, 5000);
-      
-      // Move to next sequence item after duration
-      setTimeout(() => {
-        clearInterval(responseRefreshTimer);
-        sequenceIndex++;
-        displayNextItem();
-      }, currentItem.duration);
-    } else {
-      // For all other data types, display for the specified duration
-      socket.emit('display_update', currentItem);
-      sequenceIndex++;
-      setTimeout(displayNextItem, currentItem.duration);
-    }
-  };
-
-  // Start the sequence
-  setTimeout(displayNextItem, 1000);
 }
 
 // Function to update responses for a question

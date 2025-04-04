@@ -18,6 +18,9 @@
     .status-badge {
       font-size: 0.85rem;
     }
+    .mode-badge {
+      font-size: 0.75rem;
+    }
   </style>
 </head>
 <body>
@@ -47,29 +50,42 @@
                     <% } %>
                   </small>
                 </p>
-                <div class="mb-3">
+                <div class="mb-3 d-flex gap-2">
                   <% if (game.isGameOpen) { %>
                     <span class="badge bg-success status-badge">LIVE</span>
                   <% } else { %>
                     <span class="badge bg-secondary status-badge">CLOSED</span>
                   <% } %>
+                  
+                  <span class="badge bg-info mode-badge">
+                    <%= game.gameMode === 'automatic' ? 'AUTO' : 'MANUAL' %>
+                  </span>
                 </div>
               </div>
-              <div class="card-footer bg-transparent d-flex justify-content-between">
+              <div class="card-footer bg-transparent d-flex flex-wrap gap-2 justify-content-between">
                 <a href="/admin/game/<%= game._id %>" class="btn btn-sm btn-outline-primary">View Details</a>
-                <% if (game.isGameOpen) { %>
+                <div class="d-flex gap-1">
                   <button 
-                    class="btn btn-sm btn-danger stop-game"
-                    data-game-id="<%= game._id %>">
-                    Stop Game
+                    class="btn btn-sm btn-outline-info toggle-mode"
+                    data-game-id="<%= game._id %>"
+                    data-current-mode="<%= game.gameMode || 'automatic' %>">
+                    Toggle Mode
                   </button>
-                <% } else { %>
-                  <button 
-                    class="btn btn-sm btn-success start-game" 
-                    data-game-id="<%= game._id %>">
-                    Start Game
-                  </button>
-                <% } %>
+                  
+                  <% if (game.isGameOpen) { %>
+                    <button 
+                      class="btn btn-sm btn-danger stop-game"
+                      data-game-id="<%= game._id %>">
+                      Stop Game
+                    </button>
+                  <% } else { %>
+                    <button 
+                      class="btn btn-sm btn-success start-game" 
+                      data-game-id="<%= game._id %>">
+                      Start Game
+                    </button>
+                  <% } %>
+                </div>
               </div>
             </div>
           </div>
@@ -135,6 +151,35 @@
           .catch(error => {
             console.error('Error:', error);
             alert('Error stopping game');
+          });
+        });
+      });
+      
+      // Handle toggle mode button clicks
+      document.querySelectorAll('.toggle-mode').forEach(button => {
+        button.addEventListener('click', function() {
+          const gameId = this.getAttribute('data-game-id');
+          const currentMode = this.getAttribute('data-current-mode');
+          
+          fetch(`/admin/game/toggle-mode/${gameId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Update the button text and data attribute
+              this.setAttribute('data-current-mode', data.mode);
+              window.location.reload();
+            } else {
+              alert('Error toggling game mode: ' + data.message);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Error toggling game mode');
           });
         });
       });
