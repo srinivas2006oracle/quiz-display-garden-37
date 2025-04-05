@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
@@ -136,19 +137,25 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   };
 
   const renderResponses = () => {
-    const responses = data.data as any;
-    const displayedResponses = responses.slice(0, 6);
+    const responses = data.data || [];
+    
+    if (!Array.isArray(responses) || responses.length === 0) {
+      return <div className="text-center text-sm opacity-75">No responses yet</div>;
+    }
     
     return (
       <div className="flex flex-col gap-1">
         <div className="grid grid-cols-2 gap-1">
-          {displayedResponses.map((response: any, index: number) => {
+          {responses.map((response: any, index: number) => {
+            // Extract first name from full name if available
             const firstName = response.name ? response.name.split(' ')[0] : '';
             
             return (
               <div 
                 key={index} 
                 className={`p-1 bg-white/20 rounded-lg flex items-center gap-1 transform transition-all duration-300 ${
+                  response.isCorrect ? 'border-l-4 border-green-400' : ''
+                } ${
                   animatedItems.includes(index) ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-4 scale-95'
                 }`}
               >
@@ -159,7 +166,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
                     className="w-6 h-6 rounded-full object-cover"
                   />
                 )}
-                <div className="overflow-hidden">
+                <div className="overflow-hidden flex-1">
                   {firstName && <p className="font-medium text-xs truncate">{firstName}</p>}
                   {response.responseTime !== undefined && (
                     <p className="text-xs opacity-75">{response.responseTime}s</p>
@@ -241,7 +248,12 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderFastestAnswers = () => {
     const fastestAnswers = data.data as any;
-    const displayedResponses = fastestAnswers.responses ? fastestAnswers.responses.slice(0, 6) : [];
+    
+    if (!fastestAnswers || !fastestAnswers.responses || !Array.isArray(fastestAnswers.responses) || fastestAnswers.responses.length === 0) {
+      return <div className="text-center text-sm opacity-75">No fastest answers data available</div>;
+    }
+    
+    const displayedResponses = fastestAnswers.responses.slice(0, 6);
     
     return (
       <div className="flex flex-col items-center gap-1">
