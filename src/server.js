@@ -372,20 +372,17 @@ async function createGameSequence(game) {
   currentSequenceIndex = 0;
   currentGameSequence = [];
   
-  // Add intro items
-  currentGameSequence.push({ primary: sampleData.getRandomImage(), duration: 10000 });  // Image for 10 seconds
+  // Add intro items from sample data (randomly)
+  currentGameSequence.push({ primary: sampleData.getRandomImage(), duration: 10000 });  // Random Image for 10 seconds
   currentGameSequence.push({ primary: sampleData.getDisclaimer(), duration: 10000 });   // Disclaimer for 10 seconds
-  currentGameSequence.push({ primary: sampleData.getRandomVideo(), duration: 10000 });  // Video for 10 seconds
+  currentGameSequence.push({ primary: sampleData.getRandomVideo(), duration: 10000 });  // Random Video for 10 seconds
   
-  // Get all answers for this quiz game
-  const allAnswers = await Answer.find({ quizGameId: game._id }).sort({ responseTime: 1 });
-  
-  // Add each question and answer
+  // Add each question and answer from the QuizGame database
   game.questions.forEach((question, index) => {
     // Find the correct choice index for this question
     const correctChoiceIndex = question.choices.findIndex(choice => choice.isCorrectChoice);
     
-    // Convert question format to display format
+    // Convert question format to display format (from actual game data)
     const questionData = {
       type: 'question',
       data: {
@@ -395,22 +392,8 @@ async function createGameSequence(game) {
       }
     };
     
-    // Get answers for this question
-    const questionAnswers = allAnswers.filter(answer => answer.questionIndex === index);
-    
-    // Format responses for the display
-    const formattedResponses = questionAnswers.slice(0, 6).map(answer => ({
-      name: answer.userName || `${answer.firstName || ''} ${answer.lastName || ''}`.trim() || 'Anonymous',
-      picture: answer.ytProfilePicUrl || null,
-      responseTime: answer.responseTime,
-      isCorrect: answer.isCorrectAnswer
-    }));
-    
-    // Response data
-    const responseData = {
-      type: 'response',
-      data: formattedResponses
-    };
+    // Use sample response data for the responses (will be refreshed with real data)
+    const responseData = sampleData.getRandomResponse();
     
     // Add question and responses pair
     currentGameSequence.push({ 
@@ -418,11 +401,10 @@ async function createGameSequence(game) {
       secondary: responseData, 
       duration: 30000,
       questionIndex: index,
-      responsePageIndex: 0,
-      responsePool: questionAnswers  // Store all answers for pagination
+      responsePageIndex: 0
     });
     
-    // Answer data
+    // Answer data from the game
     const answerData = {
       type: 'answer',
       data: {
@@ -431,20 +413,8 @@ async function createGameSequence(game) {
       }
     };
     
-    // Super Six data - fastest correct answers
-    const correctAnswers = questionAnswers.filter(answer => answer.isCorrectAnswer);
-    const fastestCorrectAnswers = correctAnswers.sort((a, b) => a.responseTime - b.responseTime).slice(0, 6);
-    
-    const superSixData = {
-      type: 'superSix',
-      data: {
-        responses: fastestCorrectAnswers.map(answer => ({
-          name: answer.userName || `${answer.firstName || ''} ${answer.lastName || ''}`.trim() || 'Anonymous',
-          picture: answer.ytProfilePicUrl || null,
-          responseTime: answer.responseTime
-        }))
-      }
-    };
+    // Use sample fastest answers (SuperSix) data
+    const superSixData = sampleData.getRandomFastestAnswers();
     
     // Add answer and fastest answers pair
     currentGameSequence.push({ 
@@ -454,13 +424,8 @@ async function createGameSequence(game) {
       questionIndex: index
     });
     
-    // Empty leaderboard for now
-    const leaderboardData = {
-      type: 'leaderboard',
-      data: {
-        users: []
-      }
-    };
+    // Use sample leaderboard data
+    const leaderboardData = sampleData.getRandomLeaderboard();
     
     // Add leaderboard
     currentGameSequence.push({ 
@@ -470,7 +435,7 @@ async function createGameSequence(game) {
     });
   });
   
-  // Add outro items
+  // Add outro items from sample data
   currentGameSequence.push({ 
     primary: sampleData.getCredits(), 
     secondary: sampleData.getRandomUpcomingSchedule(), 

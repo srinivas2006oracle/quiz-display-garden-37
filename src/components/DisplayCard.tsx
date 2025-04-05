@@ -168,9 +168,16 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
                 )}
                 <div className="overflow-hidden flex-1">
                   {firstName && <p className="font-medium text-xs truncate">{firstName}</p>}
-                  {response.responseTime !== undefined && (
-                    <p className="text-xs opacity-75">{response.responseTime}s</p>
-                  )}
+                  <div className="flex items-center justify-between">
+                    {response.responseTime !== undefined && (
+                      <p className="text-xs opacity-75">{response.responseTime}s</p>
+                    )}
+                    {response.optionIndex !== undefined && (
+                      <span className="text-xs px-1 bg-white/10 rounded">
+                        {String.fromCharCode(65 + response.optionIndex)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             );
