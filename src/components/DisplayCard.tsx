@@ -136,8 +136,8 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   };
 
   const renderResponses = () => {
-    const responses = data.data as any;
-    const displayedResponses = responses.slice(0, 6);
+    const responses = data.data as any[];
+    const displayedResponses = Array.isArray(responses) ? responses.slice(0, 6) : [];
     
     return (
       <div className="flex flex-col gap-1">
@@ -163,6 +163,9 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
                   {firstName && <p className="font-medium text-xs truncate">{firstName}</p>}
                   {response.responseTime !== undefined && (
                     <p className="text-xs opacity-75">{response.responseTime}s</p>
+                  )}
+                  {response.optionIndex !== undefined && (
+                    <p className="text-xs opacity-75">Option: {String.fromCharCode(65 + response.optionIndex)}</p>
                   )}
                 </div>
               </div>
@@ -241,7 +244,8 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderFastestAnswers = () => {
     const fastestAnswers = data.data as any;
-    const displayedResponses = fastestAnswers.responses ? fastestAnswers.responses.slice(0, 6) : [];
+    const displayedResponses = Array.isArray(fastestAnswers.responses) ? 
+      fastestAnswers.responses.slice(0, 6) : [];
     
     return (
       <div className="flex flex-col items-center gap-1">
