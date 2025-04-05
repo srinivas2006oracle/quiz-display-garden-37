@@ -53,8 +53,24 @@ export const useSocket = () => {
     socket.on('display_update', (data: PairedDisplayData) => {
       console.log('Received display update:', data);
       
-      // Make sure we have properly structured data
+      // Make sure we have properly structured data with valid fields
       if (data && data.primary) {
+        // Ensure secondary data is properly structured if it exists
+        if (data.secondary) {
+          if (data.secondary.type === 'response' && (!data.secondary.data || !Array.isArray(data.secondary.data))) {
+            // Fix empty responses array
+            data.secondary.data = [];
+          } else if (data.secondary.type === 'fastestAnswers' && (!data.secondary.data || !data.secondary.data.responses)) {
+            // Fix empty fastest answers
+            data.secondary.data = { responses: [] };
+          }
+        }
+        
+        // Fix leaderboard data if it's empty
+        if (data.primary.type === 'leaderboard' && (!data.primary.data || !data.primary.data.users)) {
+          data.primary.data = { users: [] };
+        }
+        
         setCurrentPairedData(data);
       } else {
         console.error('Received malformed display data:', data);

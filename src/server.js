@@ -1,3 +1,4 @@
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -254,8 +255,10 @@ async function startAutomaticSequence(game) {
         const correctChoice = game.questions[currentItem.questionIndex].choices.find(choice => choice.isCorrectChoice);
         if (correctChoice) {
           game.correctChoiceIndex = correctChoice.choiceIndex;
+          console.log(`Setting correctChoiceIndex to ${correctChoice.choiceIndex} for question ${currentItem.questionIndex}`);
         } else {
           game.correctChoiceIndex = -1;
+          console.log(`No correct choice found for question ${currentItem.questionIndex}`);
         }
         
         await game.save().catch(err => console.error('Error saving game state:', err));
@@ -304,7 +307,7 @@ function setupResponseRefresh(game, questionItem) {
   }
   
   // Start a new timer to refresh responses every 5 seconds
-  responseRefreshTimer = setInterval(async () => {
+  responseRefreshTimer = setInterval(() => {
     try {
       // Generate sample responses and update the question item
       const sampleResponses = sampleData.getRandomResponse();
@@ -336,7 +339,10 @@ async function createGameSequence(game) {
   // Add each question and answer from the QuizGame database
   game.questions.forEach((question, index) => {
     // Find the correct choice index for this question
-    const correctChoiceIndex = question.choices.findIndex(choice => choice.isCorrectChoice);
+    const correctChoice = question.choices.find(choice => choice.isCorrectChoice);
+    const correctChoiceIndex = correctChoice ? correctChoice.choiceIndex : -1;
+    
+    console.log(`Question ${index}: correctChoiceIndex = ${correctChoiceIndex}`);
     
     // Convert question format to display format (from actual game data)
     const questionData = {
