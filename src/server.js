@@ -1,4 +1,3 @@
-
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -307,55 +306,12 @@ function setupResponseRefresh(game, questionItem) {
   // Start a new timer to refresh responses every 5 seconds
   responseRefreshTimer = setInterval(async () => {
     try {
-      const questionIndex = game.activeQuestionIndex;
+      // Generate sample responses and update the question item
+      const sampleResponses = sampleData.getRandomResponse();
+      questionItem.secondary = sampleResponses;
       
-      // Only refresh if the question is still open
-      if (game.isQuestionOpen && questionIndex === questionItem.questionIndex) {
-        // Get answers for this question
-        const answers = await Answer.find({
-          quizGameId: game._id,
-          questionIndex: questionIndex
-        }).sort({ responseTime: 1 }).limit(100);
-        
-        if (answers.length > 0) {
-          // Calculate the current page of responses to show
-          const pageSize = 6;
-          const totalAnswers = answers.length;
-          
-          // Increment the page index and wrap around if needed
-          questionItem.responsePageIndex = (questionItem.responsePageIndex || 0) + 1;
-          const startIndex = ((questionItem.responsePageIndex - 1) * pageSize) % totalAnswers;
-          
-          // Get the next 6 responses or fewer if not enough
-          const pageAnswers = [];
-          for (let i = 0; i < pageSize; i++) {
-            const index = (startIndex + i) % totalAnswers;
-            if (index < totalAnswers) {
-              pageAnswers.push(answers[index]);
-            }
-          }
-          
-          // Format responses for the display
-          const formattedResponses = pageAnswers.map(answer => ({
-            name: answer.userName || `${answer.firstName || ''} ${answer.lastName || ''}`.trim() || 'Anonymous',
-            picture: answer.ytProfilePicUrl || null,
-            responseTime: answer.responseTime,
-            isCorrect: answer.isCorrectAnswer
-          }));
-          
-          // Update the secondary data in the question item
-          questionItem.secondary = {
-            type: 'response',
-            data: formattedResponses
-          };
-          
-          // Send the updated item to all clients
-          io.emit('display_update', questionItem);
-        }
-      } else {
-        // Question is no longer active, clear the timer
-        clearInterval(responseRefreshTimer);
-      }
+      // Send the updated item to all clients
+      io.emit('display_update', questionItem);
     } catch (error) {
       console.error('Error refreshing responses:', error);
     }

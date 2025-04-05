@@ -52,7 +52,13 @@ export const useSocket = () => {
 
     socket.on('display_update', (data: PairedDisplayData) => {
       console.log('Received display update:', data);
-      setCurrentPairedData(data);
+      
+      // Make sure we have properly structured data
+      if (data && data.primary) {
+        setCurrentPairedData(data);
+      } else {
+        console.error('Received malformed display data:', data);
+      }
     });
 
     // Clean up listener on unmount

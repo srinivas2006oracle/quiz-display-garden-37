@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
@@ -147,7 +146,6 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
       <div className="flex flex-col gap-1">
         <div className="grid grid-cols-2 gap-1">
           {responses.map((response: any, index: number) => {
-            // Extract first name from full name if available
             const firstName = response.name ? response.name.split(' ')[0] : '';
             
             return (
@@ -300,7 +298,12 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
 
   const renderLeaderboard = () => {
     const leaderboard = data.data as any;
-    const displayedUsers = leaderboard.users ? leaderboard.users.slice(0, 10) : [];
+    
+    if (!leaderboard || !leaderboard.users || !Array.isArray(leaderboard.users) || leaderboard.users.length === 0) {
+      return <div className="text-center text-sm opacity-75">No leaderboard data available</div>;
+    }
+    
+    const displayedUsers = leaderboard.users.slice(0, 10);
     
     return (
       <div className="flex flex-col items-center gap-1">
