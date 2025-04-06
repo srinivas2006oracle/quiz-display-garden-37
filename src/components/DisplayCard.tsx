@@ -108,11 +108,11 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
         
         <div className="flex flex-col md:flex-row w-full gap-8 justify-center items-center">
           {question.image && (
-            <div className="w-full md:w-1/2 flex justify-center">
+            <div className="w-full md:w-2/5 flex justify-center">
               <img 
                 src={question.image} 
                 alt="Question" 
-                className="max-w-full h-auto object-contain rounded-lg max-h-[50vh]" 
+                className="max-w-full h-auto object-contain rounded-lg max-h-[40vh]" 
               />
             </div>
           )}
@@ -179,12 +179,10 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
   const renderAnswer = () => {
     const answer = data.data as any;
     return (
-      <div className="flex flex-col items-center w-full h-full">
-        {/* Question text and image */}
-        {answer.questionText && <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">{answer.questionText}</h2>}
-        
+      <div className="flex flex-col md:flex-row items-center w-full h-full gap-8">
+        {/* Question image on left */}
         {answer.questionImage && (
-          <div className="w-full flex justify-center mb-4">
+          <div className="w-full md:w-2/5 flex justify-center">
             <img 
               src={answer.questionImage} 
               alt="Question" 
@@ -193,23 +191,29 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
           </div>
         )}
         
-        {/* Confetti effect */}
-        {showConfetti && (
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-            <div className="text-center">
-              <PartyPopper className="h-20 w-20 text-yellow-300 animate-bounce" />
+        {/* Answer on right */}
+        <div className="w-full md:w-3/5 flex flex-col items-center text-center">
+          {/* Confetti effect */}
+          {showConfetti && (
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <div className="text-center">
+                <PartyPopper className="h-20 w-20 text-yellow-300 animate-bounce" />
+              </div>
             </div>
-          </div>
-        )}
-        
-        {/* Answer */}
-        <h3 className="text-2xl md:text-3xl font-bold text-green-400 mb-4 text-center">Correct Answer</h3>
-        {answer.text && (
-          <div className="text-3xl md:text-5xl font-bold text-white animate-scale-in mb-4 text-center">{answer.text}</div>
-        )}
-        {answer.description && (
-          <p className="text-xl md:text-2xl font-bold opacity-80 max-w-3xl text-center">{answer.description}</p>
-        )}
+          )}
+          
+          {/* Question text */}
+          {answer.questionText && <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">{answer.questionText}</h2>}
+          
+          {/* Answer */}
+          <h3 className="text-2xl md:text-3xl font-bold text-green-400 mb-4 text-center">Correct Answer</h3>
+          {answer.text && (
+            <div className="text-3xl md:text-5xl font-bold text-white animate-scale-in mb-4 text-center">{answer.text}</div>
+          )}
+          {answer.description && (
+            <p className="text-xl md:text-2xl font-bold opacity-80 max-w-3xl text-center">{answer.description}</p>
+          )}
+        </div>
       </div>
     );
   };
@@ -265,7 +269,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
           {credits.curator && (
             <div className="bg-white/10 rounded-lg p-6 animate-scale-in flex flex-col items-center">
-              <h3 className="text-2xl font-bold mb-4">Quiz Curated By</h3>
+              <h3 className="text-2xl font-bold mb-4 text-center">Quiz Curated By</h3>
               <div className="flex flex-col items-center gap-4">
                 {credits.curator.image && (
                   <img 
@@ -284,7 +288,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
           
           {credits.sponsor && (
             <div className="bg-white/10 rounded-lg p-6 animate-scale-in flex flex-col items-center" style={{ animationDelay: "200ms" }}>
-              <h3 className="text-2xl font-bold mb-4">Quiz Sponsored By</h3>
+              <h3 className="text-2xl font-bold mb-4 text-center">Quiz Sponsored By</h3>
               <div className="flex flex-col items-center gap-4">
                 {credits.sponsor.image && (
                   <img 
