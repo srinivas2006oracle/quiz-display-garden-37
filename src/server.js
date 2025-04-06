@@ -28,6 +28,16 @@ const io = socketIo(server, {
 // Import sample data generator functions
 const sampleData = require('./sampleData');
 
+// Define timing constants (in milliseconds)
+const TIMING = {
+  INTRO_IMAGE: 10000,
+  DISCLAIMER: 10000,
+  INTRO_VIDEO: 10000,
+  QUESTION: 30000,
+  ANSWER: 10000,
+  CREDITS: 20000
+};
+
 // MongoDB Connection setup
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/QuizDbv2')
   .then(() => console.log('Connected to MongoDB'))
@@ -64,7 +74,6 @@ const ChoiceSchema = new Schema({
   choiceIndex: Number,
   choiceText: String,
   choiceImageurl: String,
-  choiceResponses: [ResponseSchema],
   isCorrectChoice: Boolean
 });
 
@@ -128,7 +137,6 @@ const activeConnections = new Set();
 let activeGame = null;
 let currentGameSequence = [];
 let currentSequenceIndex = 0;
-let responseRefreshTimer;
 let autoGameTimer = null;
 
 // Socket.IO connection handler
@@ -168,7 +176,6 @@ io.on('connection', (socket) => {
 function startQuizSequence(socket) {
   const sequence = createDisplaySequence();
   let sequenceIndex = 0;
-  let responseRefreshTimer;
   
   const displayNextItem = () => {
     if (sequenceIndex >= sequence.length) {
@@ -179,31 +186,9 @@ function startQuizSequence(socket) {
     const currentItem = sequence[sequenceIndex];
     socket.emit('display_update', currentItem);
     
-    // Special handling for question-response paired data
-    if (currentItem.primary.type === 'question' && currentItem.secondary?.type === 'response') {
-      // Clear any existing response refresh timer
-      if (responseRefreshTimer) clearInterval(responseRefreshTimer);
-      
-      // Setup a refresh timer that updates responses every 5 seconds
-      responseRefreshTimer = setInterval(() => {
-        const updatedResponses = {
-          ...currentItem,
-          secondary: sampleData.getRandomResponse() // Fresh response data every 5 seconds
-        };
-        socket.emit('display_update', updatedResponses);
-      }, 5000);
-      
-      // Move to next sequence item after duration
-      setTimeout(() => {
-        clearInterval(responseRefreshTimer);
-        sequenceIndex++;
-        displayNextItem();
-      }, currentItem.duration);
-    } else {
-      // For all other data types, display for the specified duration
-      sequenceIndex++;
-      setTimeout(displayNextItem, currentItem.duration);
-    }
+    // Move to next sequence item after duration
+    sequenceIndex++;
+    setTimeout(displayNextItem, currentItem.duration);
   };
 
   // Start the sequence with a short delay
@@ -214,20 +199,37 @@ function startQuizSequence(socket) {
 function createDisplaySequence() {
   const questionData1 = sampleData.getRandomQuestion();
   const questionData2 = sampleData.getRandomQuestion();
-  const responseData = sampleData.getRandomResponse();
-  const answerData = sampleData.getRandomAnswer();
-  const fastestAnswersData = sampleData.getRandomFastestAnswers();
+  
+  // Find answer data for sample questions
+  const answerData1 = {
+    type: 'answer',
+    data: {
+      text: "Sample Answer",
+      description: "This is a sample answer explanation",
+      questionText: questionData1.data.text,
+      questionImage: questionData1.data.image
+    }
+  };
+  
+  const answerData2 = {
+    type: 'answer',
+    data: {
+      text: "Sample Answer",
+      description: "This is a sample answer explanation",
+      questionText: questionData2.data.text,
+      questionImage: questionData2.data.image
+    }
+  };
   
   return [
-    { primary: sampleData.getRandomImage(), duration: 10000 },                               // 1. Image for 10 seconds
-    { primary: sampleData.getRandomVideo(), duration: 10000 },                               // 2. Video for 10 seconds
-    { primary: questionData1, secondary: responseData, duration: 30000 },                     // 3. Question & Responses for 30 seconds
-    { primary: answerData, secondary: fastestAnswersData, duration: 10000 },                 // 4. Answer & Fastest Answers for 10 seconds
-    { primary: sampleData.getRandomLeaderboard(), duration: 10000 },                         // 5. Leaderboard for 10 seconds
-    { primary: questionData2, secondary: responseData, duration: 30000 },                     // 6. Another Question & Responses for 30 seconds
-    { primary: sampleData.getRandomAnswer(), secondary: sampleData.getRandomFastestAnswers(), duration: 10000 }, // 7. Answer & Fastest Answers for 10 seconds
-    { primary: sampleData.getRandomLeaderboard(), duration: 10000 },                         // 8. Leaderboard for 10 seconds
-    { primary: sampleData.getRandomUpcomingSchedule(), duration: 20000 },                   // 9. Upcoming Schedule for 20 seconds
+    { primary: sampleData.getRandomImage(), duration: TIMING.INTRO_IMAGE },
+    { primary: sampleData.getDisclaimer(), duration: TIMING.DISCLAIMER },
+    { primary: sampleData.getRandomVideo(), duration: TIMING.INTRO_VIDEO },
+    { primary: questionData1, duration: TIMING.QUESTION },
+    { primary: answerData1, duration: TIMING.ANSWER },
+    { primary: questionData2, duration: TIMING.QUESTION },
+    { primary: answerData2, duration: TIMING.ANSWER },
+    { primary: sampleData.getCredits(), duration: TIMING.CREDITS }
   ];
 }
 
@@ -262,9 +264,6 @@ async function startAutomaticSequence(game) {
         }
         
         await game.save().catch(err => console.error('Error saving game state:', err));
-        
-        // For question items, set up response refresh
-        setupResponseRefresh(game, currentItem);
       }
       
       // If this is an answer, close the question
@@ -299,28 +298,6 @@ async function startAutomaticSequence(game) {
   advanceSequence();
 }
 
-// Setup response refresh for questions
-function setupResponseRefresh(game, questionItem) {
-  // Clear any existing timer
-  if (responseRefreshTimer) {
-    clearInterval(responseRefreshTimer);
-  }
-  
-  // Start a new timer to refresh responses every 5 seconds
-  responseRefreshTimer = setInterval(() => {
-    try {
-      // Generate sample responses and update the question item
-      const sampleResponses = sampleData.getRandomResponse();
-      questionItem.secondary = sampleResponses;
-      
-      // Send the updated item to all clients
-      io.emit('display_update', questionItem);
-    } catch (error) {
-      console.error('Error refreshing responses:', error);
-    }
-  }, 5000);
-}
-
 // Function to create the display sequence for a game
 async function createGameSequence(game) {
   if (!game || !game.questions || game.questions.length === 0) {
@@ -332,9 +309,9 @@ async function createGameSequence(game) {
   currentGameSequence = [];
   
   // Add intro items from sample data (randomly)
-  currentGameSequence.push({ primary: sampleData.getRandomImage(), duration: 10000 });  // Random Image for 10 seconds
-  currentGameSequence.push({ primary: sampleData.getDisclaimer(), duration: 10000 });   // Disclaimer for 10 seconds
-  currentGameSequence.push({ primary: sampleData.getRandomVideo(), duration: 10000 });  // Random Video for 10 seconds
+  currentGameSequence.push({ primary: sampleData.getRandomImage(), duration: TIMING.INTRO_IMAGE });
+  currentGameSequence.push({ primary: sampleData.getDisclaimer(), duration: TIMING.DISCLAIMER });
+  currentGameSequence.push({ primary: sampleData.getRandomVideo(), duration: TIMING.INTRO_VIDEO });
   
   // Add each question and answer from the QuizGame database
   game.questions.forEach((question, index) => {
@@ -354,16 +331,11 @@ async function createGameSequence(game) {
       }
     };
     
-    // Use sample response data for the responses (will be refreshed with real data)
-    const responseData = sampleData.getRandomResponse();
-    
-    // Add question and responses pair
+    // Add question item
     currentGameSequence.push({ 
       primary: questionData, 
-      secondary: responseData, 
-      duration: 30000,
-      questionIndex: index,
-      responsePageIndex: 0
+      duration: TIMING.QUESTION,
+      questionIndex: index
     });
     
     // Answer data from the game
@@ -371,28 +343,16 @@ async function createGameSequence(game) {
       type: 'answer',
       data: {
         text: correctChoiceIndex >= 0 ? question.choices[correctChoiceIndex].choiceText : "Not specified",
-        description: question.answerExplanation
+        description: question.answerExplanation,
+        questionText: question.questionText,
+        questionImage: question.questionImageUrl
       }
     };
     
-    // Use sample fastest answers (SuperSix) data
-    const superSixData = sampleData.getRandomFastestAnswers();
-    
-    // Add answer and fastest answers pair
+    // Add answer
     currentGameSequence.push({ 
       primary: answerData, 
-      secondary: superSixData, 
-      duration: 10000,
-      questionIndex: index
-    });
-    
-    // Use sample leaderboard data
-    const leaderboardData = sampleData.getRandomLeaderboard();
-    
-    // Add leaderboard
-    currentGameSequence.push({ 
-      primary: leaderboardData, 
-      duration: 10000,
+      duration: TIMING.ANSWER,
       questionIndex: index
     });
   });
@@ -400,8 +360,7 @@ async function createGameSequence(game) {
   // Add outro items from sample data
   currentGameSequence.push({ 
     primary: sampleData.getCredits(), 
-    secondary: sampleData.getRandomUpcomingSchedule(), 
-    duration: 20000 
+    duration: TIMING.CREDITS 
   });
   
   return currentGameSequence;

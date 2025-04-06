@@ -41,28 +41,15 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-quiz-pattern bg-repeat bg-opacity-10">
       <Header />
-      <main className="flex-1 flex flex-col items-center justify-center py-1 px-2 overflow-hidden">
+      <main className="flex-1 flex flex-col items-center justify-center p-2 overflow-hidden">
         {currentPairedData ? (
-          <div className={`w-full max-w-7xl flex ${isPortrait || isMobile ? 'flex-col' : 'flex-row'} gap-1 items-center justify-center`}>
-            <div className={`${isPortrait || isMobile ? 'w-full' : 'w-1/2'}`}>
-              <DisplayCard 
-                data={currentPairedData.primary} 
-                isVisible={true} 
-                isPortrait={isPortrait}
-                duration={currentPairedData.duration}
-              />
-            </div>
-            
-            {currentPairedData.secondary && (
-              <div className={`${isPortrait || isMobile ? 'w-full' : 'w-1/2'}`}>
-                <DisplayCard 
-                  data={currentPairedData.secondary} 
-                  isVisible={true} 
-                  isPortrait={isPortrait}
-                  duration={currentPairedData.duration}
-                />
-              </div>
-            )}
+          <div className="w-full h-full max-w-7xl">
+            <DisplayCard 
+              data={currentPairedData.primary} 
+              isVisible={true} 
+              isPortrait={isPortrait}
+              duration={currentPairedData.duration}
+            />
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">

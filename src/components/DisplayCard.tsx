@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
-import { Check, Clock, Award, HelpCircle, Image, Video, MessageCircle, Users, Calendar, Info, CreditCard, QrCode } from 'lucide-react';
+import { Check, Clock, Award, HelpCircle, Image, Video, Info, CreditCard, QrCode, Calendar, MessageCircle, Users, Confetti } from 'lucide-react';
 import { format } from 'date-fns';
 import CountdownTimer from './CountdownTimer';
 
@@ -19,28 +20,28 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const animationClass = isVisible ? animation.enter : animation.exit;
   
   const [animatedItems, setAnimatedItems] = useState<number[]>([]);
+  const [showConfetti, setShowConfetti] = useState(false);
   
   useEffect(() => {
     if (isVisible) {
-      const itemTypes = ['response', 'fastestAnswers', 'leaderboard'];
+      // Show confetti for answers
+      if (type === 'answer') {
+        setShowConfetti(true);
+        const timer = setTimeout(() => setShowConfetti(false), 3000);
+        return () => clearTimeout(timer);
+      }
+      
+      const itemTypes = ['question'];
       if (itemTypes.includes(type)) {
         setAnimatedItems([]);
-        const items = type === 'response' ? 
-            Math.min(((data.data as any) || []).length, 6) :
-            type === 'fastestAnswers' ? 
-              Math.min(((data.data as any).responses || []).length, 6) :
-              type === 'leaderboard' ? 
-                Math.min(((data.data as any).users || []).length, 10) : 0;
+        const items = type === 'question' ? 
+          ((data.data as any).choices || []).length : 0;
         
         for (let i = 0; i < items; i++) {
           setTimeout(() => {
             setAnimatedItems(prev => [...prev, i]);
           }, i * 150);
         }
-      } else if (type === 'question') {
-        const choices = ((data.data as any).choices || []).length;
-        const allIndexes = Array.from({ length: choices }, (_, i) => i);
-        setAnimatedItems(allIndexes);
       }
     } else {
       setAnimatedItems([]);
@@ -51,24 +52,18 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     switch (type) {
       case 'question':
         return <HelpCircle className="h-6 w-6 text-yellow-300" />;
-      case 'response':
-        return <MessageCircle className="h-6 w-6 text-yellow-300" />;
       case 'image':
         return <Image className="h-6 w-6 text-yellow-300" />;
       case 'video':
         return <Video className="h-6 w-6 text-yellow-300" />;
       case 'answer':
         return <Check className="h-6 w-6 text-green-400" />;
-      case 'fastestAnswers':
-        return <Clock className="h-6 w-6 text-yellow-300" />;
-      case 'leaderboard':
-        return <Award className="h-6 w-6 text-yellow-300" />;
-      case 'upcomingSchedule':
-        return <Calendar className="h-6 w-6 text-yellow-300" />;
       case 'credits':
         return <CreditCard className="h-6 w-6 text-yellow-300" />;
       case 'disclaimer':
         return <QrCode className="h-6 w-6 text-yellow-300" />;
+      case 'upcomingSchedule':
+        return <Calendar className="h-6 w-6 text-yellow-300" />;
       default:
         return <Info className="h-6 w-6 text-yellow-300" />;
     }
@@ -78,18 +73,12 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     switch (type) {
       case 'question':
         return renderQuestion();
-      case 'response':
-        return renderResponses();
       case 'image':
         return renderImage();
       case 'video':
         return renderVideo();
       case 'answer':
         return renderAnswer();
-      case 'fastestAnswers':
-        return renderFastestAnswers();
-      case 'leaderboard':
-        return renderLeaderboard();
       case 'upcomingSchedule':
         return renderUpcomingSchedule();
       case 'credits':
@@ -106,80 +95,36 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
     const optionIdentifiers = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     
     return (
-      <div className="flex flex-col items-center gap-1">
-        {question.text && <h2 className="text-xl md:text-2xl font-bold">{question.text}</h2>}
-        {question.image && (
-          <div className="w-full max-w-4xl overflow-hidden rounded-lg aspect-video mb-2">
-            <img 
-              src={question.image} 
-              alt="Question" 
-              className="w-full h-full object-cover" 
-            />
-          </div>
-        )}
-        {question.choices && (
-          <div className="grid grid-cols-1 gap-1 w-full max-w-md">
-            {question.choices.map((choice: string, index: number) => (
-              <div 
-                key={index} 
-                className={`p-2 bg-white/20 rounded-lg text-white font-medium transform transition-all duration-300 ${
-                  animatedItems.includes(index) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
-                }`}
-              >
-                <span className="font-bold mr-2">{optionIdentifiers[index]})</span> {choice}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderResponses = () => {
-    const responses = data.data || [];
-    
-    if (!Array.isArray(responses) || responses.length === 0) {
-      return <div className="text-center text-sm opacity-75">No responses yet</div>;
-    }
-    
-    return (
-      <div className="flex flex-col gap-1">
-        <div className="grid grid-cols-2 gap-1">
-          {responses.map((response: any, index: number) => {
-            const firstName = response.name ? response.name.split(' ')[0] : '';
-            
-            return (
-              <div 
-                key={index} 
-                className={`p-1 bg-white/20 rounded-lg flex items-center gap-1 transform transition-all duration-300 ${
-                  response.isCorrect ? 'border-l-4 border-green-400' : ''
-                } ${
-                  animatedItems.includes(index) ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-4 scale-95'
-                }`}
-              >
-                {response.picture && (
-                  <img 
-                    src={response.picture} 
-                    alt={response.name || 'User'} 
-                    className="w-6 h-6 rounded-full object-cover"
-                  />
-                )}
-                <div className="overflow-hidden flex-1">
-                  {firstName && <p className="font-medium text-xs truncate">{firstName}</p>}
-                  <div className="flex items-center justify-between">
-                    {response.responseTime !== undefined && (
-                      <p className="text-xs opacity-75">{response.responseTime}s</p>
-                    )}
-                    {response.optionIndex !== undefined && (
-                      <span className="text-xs px-1 bg-white/10 rounded">
-                        {String.fromCharCode(65 + response.optionIndex)}
-                      </span>
-                    )}
-                  </div>
+      <div className="flex flex-col items-center w-full h-full">
+        {question.text && <h2 className="text-xl md:text-3xl font-bold mb-4">{question.text}</h2>}
+        
+        <div className="flex flex-col md:flex-row w-full gap-6 justify-center">
+          {/* Question image on the left */}
+          {question.image && (
+            <div className="w-full md:w-1/2 overflow-hidden rounded-lg">
+              <img 
+                src={question.image} 
+                alt="Question" 
+                className="w-full h-auto object-contain rounded-lg" 
+              />
+            </div>
+          )}
+          
+          {/* Choices on the right */}
+          {question.choices && (
+            <div className="grid grid-cols-1 gap-2 w-full md:w-1/2">
+              {question.choices.map((choice: string, index: number) => (
+                <div 
+                  key={index} 
+                  className={`p-3 bg-white/20 rounded-lg text-white font-medium text-lg transform transition-all duration-300 ${
+                    animatedItems.includes(index) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
+                  }`}
+                >
+                  <span className="font-bold mr-2">{optionIdentifiers[index]})</span> {choice}
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -188,19 +133,19 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderImage = () => {
     const image = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-1">
-        {image.name && <h2 className="text-xl md:text-2xl font-bold">{image.name}</h2>}
+      <div className="flex flex-col items-center w-full h-full">
+        {image.name && <h2 className="text-xl md:text-3xl font-bold mb-4">{image.name}</h2>}
 
         {image.url && (
-          <div className="w-full max-w-4xl overflow-hidden rounded-lg aspect-video animate-scale-in">
+          <div className="w-full max-w-4xl overflow-hidden rounded-lg animate-scale-in">
             <img 
               src={image.url} 
               alt={image.name || 'Image'} 
-              className="w-full h-full object-cover" 
+              className="w-full h-auto object-contain rounded-lg" 
             />
           </div>
         )}
-        {image.description && <p className="text-base opacity-80">{image.description}</p>}
+        {image.description && <p className="text-base opacity-80 mt-4">{image.description}</p>}
       </div>
     );
   };
@@ -208,8 +153,8 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderVideo = () => {
     const video = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-1">
-        {video.name && <h2 className="text-xl md:text-2xl font-bold">{video.name}</h2>}
+      <div className="flex flex-col items-center w-full h-full">
+        {video.name && <h2 className="text-xl md:text-3xl font-bold mb-4">{video.name}</h2>}
 
         {video.url && (
           <div className="w-full max-w-4xl aspect-video bg-black/30 rounded-lg flex items-center justify-center animate-scale-in overflow-hidden">
@@ -224,7 +169,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
             </video>
           </div>
         )}
-        {video.description && <p className="text-base opacity-80">{video.description}</p>}
+        {video.description && <p className="text-base opacity-80 mt-4">{video.description}</p>}
       </div>
     );
   };
@@ -232,113 +177,37 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderAnswer = () => {
     const answer = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-1">
-        <h2 className="text-xl md:text-2xl font-bold">Correct Answer</h2>
+      <div className="flex flex-col items-center w-full h-full">
+        {/* Question text and image */}
+        {answer.questionText && <h2 className="text-xl md:text-2xl font-bold mb-2">{answer.questionText}</h2>}
+        
+        {answer.questionImage && (
+          <div className="w-full max-w-lg overflow-hidden rounded-lg mb-6">
+            <img 
+              src={answer.questionImage} 
+              alt="Question" 
+              className="w-full h-auto object-contain rounded-lg" 
+            />
+          </div>
+        )}
+        
+        {/* Confetti effect */}
+        {showConfetti && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <div className="text-center">
+              <Confetti className="h-20 w-20 text-yellow-300 animate-bounce" />
+            </div>
+          </div>
+        )}
+        
+        {/* Answer */}
+        <h3 className="text-xl md:text-2xl font-bold text-green-400 mb-2">Correct Answer</h3>
         {answer.text && (
-          <div className="text-3xl md:text-4xl font-bold text-white animate-scale-in">{answer.text}</div>
+          <div className="text-2xl md:text-4xl font-bold text-white animate-scale-in mb-4">{answer.text}</div>
         )}
         {answer.description && (
-          <p className="text-base opacity-80 max-w-xl text-center">{answer.description}</p>
+          <p className="text-base md:text-lg opacity-80 max-w-2xl text-center">{answer.description}</p>
         )}
-      </div>
-    );
-  };
-
-  const getMedalIcon = (index: number) => {
-    if (index === 0) return <Award className="h-4 w-4 text-yellow-300" />;
-    if (index === 1) return <Award className="h-4 w-4 text-gray-300" />;
-    if (index === 2) return <Award className="h-4 w-4 text-amber-600" />;
-    return null;
-  };
-
-  const renderFastestAnswers = () => {
-    const fastestAnswers = data.data as any;
-    
-    if (!fastestAnswers || !fastestAnswers.responses || !Array.isArray(fastestAnswers.responses) || fastestAnswers.responses.length === 0) {
-      return <div className="text-center text-sm opacity-75">No fastest answers data available</div>;
-    }
-    
-    const displayedResponses = fastestAnswers.responses.slice(0, 6);
-    
-    return (
-      <div className="flex flex-col items-center gap-1">
-        <div className="flex flex-col gap-1 w-full max-w-md">
-          {displayedResponses.map((response: any, index: number) => (
-            <div 
-              key={index} 
-              className={`p-1 rounded-lg flex items-center gap-2 transform transition-all duration-300 ${
-                index === 0 ? 'bg-yellow-500/30' : 
-                index === 1 ? 'bg-gray-400/30' : 
-                index === 2 ? 'bg-amber-700/30' : 'bg-white/20'
-              } ${
-                animatedItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
-            >
-              {getMedalIcon(index)}
-              {response.picture && (
-                <img 
-                  src={response.picture} 
-                  alt={response.name || 'User'} 
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              )}
-              <div className="flex-1">
-                {response.name && <p className="font-medium text-sm">{response.name}</p>}
-                {response.responseTime !== undefined && (
-                  <p className="text-xs opacity-75">{response.responseTime}s</p>
-                )}
-              </div>
-              <div className="text-lg font-bold">{index + 1}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const renderLeaderboard = () => {
-    const leaderboard = data.data as any;
-    
-    if (!leaderboard || !leaderboard.users || !Array.isArray(leaderboard.users) || leaderboard.users.length === 0) {
-      return <div className="text-center text-sm opacity-75">No leaderboard data available</div>;
-    }
-    
-    const displayedUsers = leaderboard.users.slice(0, 10);
-    
-    return (
-      <div className="flex flex-col items-center gap-1">
-        <div className="flex flex-col gap-1 w-full max-w-md">
-          {displayedUsers.map((user: any, index: number) => (
-            <div 
-              key={index} 
-              className={`p-1 rounded-lg flex items-center gap-2 transform transition-all duration-300 ${
-                index === 0 ? 'bg-yellow-500/30' : 
-                index === 1 ? 'bg-gray-400/30' : 
-                index === 2 ? 'bg-amber-700/30' : 'bg-white/20'
-              } ${
-                animatedItems.includes(index) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-              }`}
-            >
-              {getMedalIcon(index)}
-              <div className="w-6 h-6 flex items-center justify-center font-bold text-sm">
-                {index + 1}
-              </div>
-              {user.picture && (
-                <img 
-                  src={user.picture} 
-                  alt={user.name || 'User'} 
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              )}
-              <div className="flex-1">
-                {user.name && <p className="font-medium text-sm">{user.name}</p>}
-              </div>
-              {user.score !== undefined && (
-                <div className="text-lg font-bold">{user.score}</div>
-              )}
-            </div>
-          ))}
-        </div>
       </div>
     );
   };
@@ -346,35 +215,37 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderUpcomingSchedule = () => {
     const upcomingSchedule = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center w-full h-full">
+        <h2 className="text-xl md:text-3xl font-bold mb-6">Upcoming Schedule</h2>
+        
         <div className="w-full overflow-x-auto">
           <table className="min-w-full divide-y divide-white/20">
             <thead>
               <tr>
-                <th className="px-2 py-1 text-left text-xs font-medium text-white/70">Program</th>
-                <th className="px-2 py-1 text-left text-xs font-medium text-white/70 hidden md:table-cell">Description</th>
-                <th className="px-2 py-1 text-left text-xs font-medium text-white/70">Date & Time</th>
-                <th className="px-2 py-1 text-left text-xs font-medium text-white/70">Starts In</th>
+                <th className="px-3 py-2 text-left text-sm font-medium text-white/70">Program</th>
+                <th className="px-3 py-2 text-left text-sm font-medium text-white/70 hidden md:table-cell">Description</th>
+                <th className="px-3 py-2 text-left text-sm font-medium text-white/70">Date & Time</th>
+                <th className="px-3 py-2 text-left text-sm font-medium text-white/70">Starts In</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {upcomingSchedule.schedule && upcomingSchedule.schedule.map((item: any, index: number) => (
                 <tr key={index} className={`transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`} style={{ transitionDelay: `${index * 100}ms` }}>
-                  <td className="px-2 py-1 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     {item.programName && <div className="font-medium text-sm">{item.programName}</div>}
                   </td>
-                  <td className="px-2 py-1 hidden md:table-cell">
+                  <td className="px-3 py-2 hidden md:table-cell">
                     {item.description && <div className="text-xs opacity-70">{item.description}</div>}
                   </td>
-                  <td className="px-2 py-1 whitespace-nowrap">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     {item.startDateTime && (
-                      <div className="text-xs">
+                      <div className="text-sm">
                         {format(new Date(item.startDateTime), 'MMM d, h:mm a')}
                       </div>
                     )}
                   </td>
-                  <td className="px-2 py-1 whitespace-nowrap">
-                    {item.startsIn && <div className="text-xs font-medium">{item.startsIn}</div>}
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {item.startsIn && <div className="text-sm font-medium">{item.startsIn}</div>}
                   </td>
                 </tr>
               ))}
@@ -388,44 +259,48 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderCredits = () => {
     const credits = data.data as any;
     return (
-      <div className="flex flex-col gap-3">
-        {credits.curator && (
-          <div className="bg-white/10 rounded-lg p-2 animate-scale-in">
-            <h3 className="text-lg font-bold mb-1">Quiz Curated By</h3>
-            <div className="flex items-center gap-3">
-              {credits.curator.image && (
-                <img 
-                  src={credits.curator.image} 
-                  alt={credits.curator.name} 
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-              )}
-              <div className="flex-1">
-                <h4 className="font-medium">{credits.curator.name}</h4>
-                <p className="text-sm opacity-80">{credits.curator.bio}</p>
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="flex flex-col items-center w-full h-full">
+        <h2 className="text-xl md:text-3xl font-bold mb-6">Quiz Credits</h2>
         
-        {credits.sponsor && (
-          <div className="bg-white/10 rounded-lg p-2 animate-scale-in" style={{ animationDelay: "200ms" }}>
-            <h3 className="text-lg font-bold mb-1">Quiz Sponsored By</h3>
-            <div className="flex items-center gap-3">
-              {credits.sponsor.image && (
-                <img 
-                  src={credits.sponsor.image} 
-                  alt={credits.sponsor.name} 
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-              )}
-              <div className="flex-1">
-                <h4 className="font-medium">{credits.sponsor.name}</h4>
-                <p className="text-sm opacity-80">{credits.sponsor.bio}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+          {credits.curator && (
+            <div className="bg-white/10 rounded-lg p-4 animate-scale-in">
+              <h3 className="text-lg font-bold mb-2">Quiz Curated By</h3>
+              <div className="flex items-center gap-4">
+                {credits.curator.image && (
+                  <img 
+                    src={credits.curator.image} 
+                    alt={credits.curator.name} 
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                )}
+                <div className="flex-1">
+                  <h4 className="font-medium text-lg">{credits.curator.name}</h4>
+                  <p className="text-sm opacity-80">{credits.curator.bio}</p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+          
+          {credits.sponsor && (
+            <div className="bg-white/10 rounded-lg p-4 animate-scale-in" style={{ animationDelay: "200ms" }}>
+              <h3 className="text-lg font-bold mb-2">Quiz Sponsored By</h3>
+              <div className="flex items-center gap-4">
+                {credits.sponsor.image && (
+                  <img 
+                    src={credits.sponsor.image} 
+                    alt={credits.sponsor.name} 
+                    className="w-16 h-16 rounded-full object-cover"
+                  />
+                )}
+                <div className="flex-1">
+                  <h4 className="font-medium text-lg">{credits.sponsor.name}</h4>
+                  <p className="text-sm opacity-80">{credits.sponsor.bio}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -433,42 +308,45 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
   const renderDisclaimer = () => {
     const disclaimer = data.data as any;
     return (
-      <div className="flex flex-col items-center gap-3">
-        {disclaimer.qrCode && (
-          <div className="w-40 h-40 bg-white p-2 rounded-lg">
-            <img 
-              src={disclaimer.qrCode} 
-              alt="QR Code" 
-              className="w-full h-full object-contain"
-            />
-          </div>
-        )}
-        {disclaimer.text && (
-          <p className="text-sm opacity-80 text-center max-w-xl">
-            {disclaimer.text}
-          </p>
-        )}
+      <div className="flex flex-col items-center w-full h-full">
+        <h2 className="text-xl md:text-3xl font-bold mb-6">Disclaimer</h2>
+        
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          {disclaimer.qrCode && (
+            <div className="w-48 h-48 bg-white p-3 rounded-lg">
+              <img 
+                src={disclaimer.qrCode} 
+                alt="QR Code" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+          )}
+          {disclaimer.text && (
+            <p className="text-base md:text-lg opacity-80 text-center max-w-xl">
+              {disclaimer.text}
+            </p>
+          )}
+        </div>
       </div>
     );
   };
 
   return (
     <div
-      className={`glass-card p-2 ${animationClass} ${animation.background} w-full h-full`}
+      className={`glass-card p-4 ${animationClass} ${animation.background} w-full h-full`}
       style={{ 
         opacity: isVisible ? 1 : 0,
-        display: isVisible ? 'block' : 'none',
-        maxHeight: isPortrait ? 'auto' : '70vh',
-        overflow: 'auto'
+        minHeight: '70vh',
+        position: 'relative'
       }}
     >
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           {renderIcon()}
-          <h3 className="text-lg font-semibold capitalize">{displayType}</h3>
+          <h3 className="text-lg md:text-xl font-semibold capitalize">{displayType}</h3>
         </div>
         
-        {(type === 'question' ) && duration && (
+        {(type === 'question') && duration && (
           <div className="w-32 md:w-48">
             <CountdownTimer duration={duration} isQuestion={true} />
           </div>
@@ -480,7 +358,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
         )}
       </div>
       
-      <div className="overflow-auto">
+      <div className="flex-1 flex items-center justify-center">
         {renderContent()}
       </div>
     </div>

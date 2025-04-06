@@ -55,20 +55,13 @@ export const useSocket = () => {
       
       // Make sure we have properly structured data with valid fields
       if (data && data.primary) {
-        // Ensure secondary data is properly structured if it exists
-        if (data.secondary) {
-          if (data.secondary.type === 'response' && (!data.secondary.data || !Array.isArray(data.secondary.data))) {
-            // Fix empty responses array
-            data.secondary.data = [];
-          } else if (data.secondary.type === 'fastestAnswers' && (!data.secondary.data || !data.secondary.data.responses)) {
-            // Fix empty fastest answers
-            data.secondary.data = { responses: [] };
-          }
+        // Fix various data types to ensure they have proper structure
+        if (data.primary.type === 'question' && (!data.primary.data || typeof data.primary.data !== 'object')) {
+          data.primary.data = { text: '', choices: [] };
         }
         
-        // Fix leaderboard data if it's empty
-        if (data.primary.type === 'leaderboard' && (!data.primary.data || !data.primary.data.users)) {
-          data.primary.data = { users: [] };
+        if (data.primary.type === 'answer' && (!data.primary.data || typeof data.primary.data !== 'object')) {
+          data.primary.data = { text: '', description: '' };
         }
         
         setCurrentPairedData(data);
