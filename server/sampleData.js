@@ -153,12 +153,12 @@ const sampleUpcomingSchedule = {
 // Sample credits
 const sampleCredits = {
   curator: {
-    name: "Dr. Alex Morgan",
-    image: "https://randomuser.me/api/portraits/men/42.jpg",
-    bio: "Quiz master with 10 years experience in educational games"
+    name: "Srinivas Prasad",
+    image: "/lovable-uploads/pic1.jpeg",
+    bio: "Software Engg by profession, Creator by passion"
   },
   sponsor: {
-    name: "Knowledge Plus Inc.",
+    name: "Naresh Technologies & Consultancy Services",
     image: "https://randomuser.me/api/portraits/women/43.jpg",
     bio: "Supporting educational initiatives since 2010"
   },
