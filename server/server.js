@@ -38,11 +38,11 @@ const sampleData = require('./sampleData');
 
 // Define timing constants (in milliseconds)
 const TIMING = {
-  INTRO_IMAGE: 2000,
-  DISCLAIMER: 2000,
-  INTRO_VIDEO: 2000,
+  INTRO_IMAGE: 5000,
+  DISCLAIMER: 5000,
+  INTRO_VIDEO: 5000,
   QUESTION: 30000,
-  ANSWER: 10000,
+  ANSWER: 20000,
   CREDITS: 20000
 };
 

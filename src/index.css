@@ -1,5 +1,8 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Comic+Sans:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
 
 @tailwind base;
 @tailwind components;
@@ -42,14 +45,14 @@
 @layer base {
   * {
     @apply border-border selection:bg-white/10 selection:text-white;
-    font-family: 'Comic Neue', cursive;
+    font-family: 'Open Sans';
     font-weight: 700;
   }
   
   body {
     @apply bg-background text-foreground antialiased overflow-hidden;
     font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
-    background-image: url("/lovable-uploads/Grayscaleimage93172.png");
+    background-image: url("/lovable-uploads/764a78be-696e-46df-9c3c-7b4408996f4f.png");
     background-size: cover;
     background-repeat: repeat;
   }
