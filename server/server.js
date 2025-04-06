@@ -38,9 +38,9 @@ const sampleData = require('./sampleData');
 
 // Define timing constants (in milliseconds)
 const TIMING = {
-  INTRO_IMAGE: 10000,
-  DISCLAIMER: 10000,
-  INTRO_VIDEO: 10000,
+  INTRO_IMAGE: 2000,
+  DISCLAIMER: 2000,
+  INTRO_VIDEO: 2000,
   QUESTION: 30000,
   ANSWER: 10000,
   CREDITS: 20000
@@ -508,7 +508,7 @@ function createGameSequence(game) {
     console.error('No questions found in the game');
     return [];
   }
-  
+  const totalQuestions = game.questions.length;
   currentSequenceIndex = 0;
   currentGameSequence = [];
   
@@ -533,7 +533,8 @@ function createGameSequence(game) {
     currentGameSequence.push({ 
       primary: questionData, 
       duration: TIMING.QUESTION,
-      questionIndex: index
+      questionIndex: index,
+      totalQuestions:totalQuestions
     });
     
     // Find correct choice

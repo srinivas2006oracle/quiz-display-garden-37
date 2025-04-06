@@ -15,22 +15,22 @@ interface DisplayCardProps {
   totalQuestions?: number;
 }
 
-const DisplayCard: React.FC<DisplayCardProps> = ({ 
-  data, 
-  isVisible, 
-  isPortrait, 
+const DisplayCard: React.FC<DisplayCardProps> = ({
+  data,
+  isVisible,
+  isPortrait,
   duration,
   questionIndex,
-  totalQuestions 
+  totalQuestions
 }) => {
   const { type } = data;
   const displayType = type === 'response' ? 'responses' : type === 'fastestAnswers' ? 'superSix' : type;
   const animation = getAnimationForType(type);
   const animationClass = isVisible ? animation.enter : animation.exit;
-  
+
   const [animatedItems, setAnimatedItems] = useState<number[]>([]);
   const [showConfetti, setShowConfetti] = useState(false);
-  
+
   useEffect(() => {
     if (isVisible) {
       // Show confetti for answers
@@ -39,13 +39,13 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
         const timer = setTimeout(() => setShowConfetti(false), 3000);
         return () => clearTimeout(timer);
       }
-      
+
       const itemTypes = ['question'];
       if (itemTypes.includes(type)) {
         setAnimatedItems([]);
-        const items = type === 'question' ? 
+        const items = type === 'question' ?
           ((data.data as any).choices || []).length : 0;
-        
+
         for (let i = 0; i < items; i++) {
           setTimeout(() => {
             setAnimatedItems(prev => [...prev, i]);
@@ -56,7 +56,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
       setAnimatedItems([]);
     }
   }, [isVisible, data, type]);
-  
+
   const renderIcon = () => {
     switch (type) {
       case 'question':
@@ -92,39 +92,39 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
   const renderQuestion = () => {
     const question = data.data as any;
     const optionIdentifiers = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-    
+
     return (
       <div className="flex flex-col items-center w-full h-full">
+        {questionIndex !== undefined && totalQuestions && (
+          <div className="text-lg md:text-xl mt-2 text-yellow-300 font-normal text-center">
+            Question {questionIndex + 1} of {totalQuestions}
+          </div>
+        )}
         {question.text && (
           <h2 className="text-2xl md:text-4xl font-bold mb-4 text-center">
             {question.text}
-            {questionIndex !== undefined && totalQuestions && (
-              <div className="text-lg md:text-xl mt-2 text-yellow-300 font-normal text-center">
-                Question {questionIndex + 1} of {totalQuestions}
-              </div>
-            )}
+
           </h2>
         )}
-        
+
         <div className="flex flex-col md:flex-row w-full gap-8 justify-center items-center">
           {question.image && (
             <div className="w-full md:w-2/5 flex justify-center">
-              <img 
-                src={question.image} 
-                alt="Question" 
-                className="max-w-full h-auto object-contain rounded-lg max-h-[40vh]" 
+              <img
+                src={question.image}
+                alt="Question"
+                className="max-w-full h-auto object-contain rounded-lg max-h-[30vh]"
               />
             </div>
           )}
-          
+
           {question.choices && (
             <div className="grid grid-cols-1 gap-4 w-full md:w-1/2">
               {question.choices.map((choice: string, index: number) => (
-                <div 
-                  key={index} 
-                  className={`p-4 bg-white/20 rounded-lg text-white font-bold text-xl md:text-2xl transform transition-all duration-300 text-center ${
-                    animatedItems.includes(index) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
-                  }`}
+                <div
+                  key={index}
+                  className={`p-4 bg-white/20 rounded-lg text-white font-bold text-xl md:text-2xl transform transition-all duration-300 text-center ${animatedItems.includes(index) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
+                    }`}
                 >
                   <span className="font-bold mr-3 text-yellow-300">{optionIdentifiers[index]})</span> {choice}
                 </div>
@@ -142,10 +142,10 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
       <div className="flex flex-col items-center justify-center w-full h-full">
         {image.url && (
           <div className="w-full flex justify-center items-center">
-            <img 
-              src={image.url} 
-              alt={image.name || 'Image'} 
-              className="max-w-full max-h-[60vh] object-contain rounded-lg" 
+            <img
+              src={image.url}
+              alt={image.name || 'Image'}
+              className="max-w-full max-h-[60vh] object-contain rounded-lg"
             />
           </div>
         )}
@@ -160,8 +160,8 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
       <div className="flex flex-col items-center justify-center w-full h-full">
         {video.url && (
           <div className="w-full aspect-video bg-black/30 rounded-lg flex items-center justify-center max-h-[60vh] overflow-hidden">
-            <video 
-              src={video.url} 
+            <video
+              src={video.url}
               controls
               autoPlay
               muted
@@ -183,14 +183,14 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
         {/* Question image on left */}
         {answer.questionImage && (
           <div className="w-full md:w-2/5 flex justify-center">
-            <img 
-              src={answer.questionImage} 
-              alt="Question" 
-              className="max-h-[40vh] object-contain rounded-lg" 
+            <img
+              src={answer.questionImage}
+              alt="Question"
+              className="max-h-[40vh] object-contain rounded-lg"
             />
           </div>
         )}
-        
+
         {/* Answer on right */}
         <div className="w-full md:w-3/5 flex flex-col items-center text-center">
           {/* Confetti effect */}
@@ -201,10 +201,10 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
               </div>
             </div>
           )}
-          
+
           {/* Question text */}
           {answer.questionText && <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">{answer.questionText}</h2>}
-          
+
           {/* Answer */}
           <h3 className="text-2xl md:text-3xl font-bold text-green-400 mb-4 text-center">Correct Answer</h3>
           {answer.text && (
@@ -223,7 +223,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
     return (
       <div className="flex flex-col items-center w-full h-full">
         <h2 className="text-xl md:text-3xl font-bold mb-6 text-center">Upcoming Schedule</h2>
-        
+
         <div className="w-full overflow-x-auto">
           <table className="min-w-full divide-y divide-white/20">
             <thead>
@@ -272,9 +272,9 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
               <h3 className="text-2xl font-bold mb-4 text-center">Quiz Curated By</h3>
               <div className="flex flex-col items-center gap-4">
                 {credits.curator.image && (
-                  <img 
-                    src={credits.curator.image} 
-                    alt={credits.curator.name} 
+                  <img
+                    src={credits.curator.image}
+                    alt={credits.curator.name}
                     className="w-24 h-24 rounded-full object-cover"
                   />
                 )}
@@ -285,15 +285,15 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
               </div>
             </div>
           )}
-          
+
           {credits.sponsor && (
             <div className="bg-white/10 rounded-lg p-6 animate-scale-in flex flex-col items-center" style={{ animationDelay: "200ms" }}>
               <h3 className="text-2xl font-bold mb-4 text-center">Quiz Sponsored By</h3>
               <div className="flex flex-col items-center gap-4">
                 {credits.sponsor.image && (
-                  <img 
-                    src={credits.sponsor.image} 
-                    alt={credits.sponsor.name} 
+                  <img
+                    src={credits.sponsor.image}
+                    alt={credits.sponsor.name}
                     className="w-24 h-24 rounded-full object-cover"
                   />
                 )}
@@ -317,9 +317,9 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
         <div className="flex flex-col md:flex-row items-center gap-8 justify-center">
           {disclaimer.qrCode && (
             <div className="w-60 h-60 bg-white p-4 rounded-lg">
-              <img 
-                src={disclaimer.qrCode} 
-                alt="QR Code" 
+              <img
+                src={disclaimer.qrCode}
+                alt="QR Code"
                 className="w-full h-full object-contain"
               />
             </div>
@@ -337,7 +337,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
   return (
     <div
       className={`glass-card p-6 ${animationClass} ${animation.background} w-full h-full`}
-      style={{ 
+      style={{
         opacity: isVisible ? 1 : 0,
         height: '70vh',
         position: 'relative'
@@ -353,14 +353,14 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
             </div>
           </div>
         )}
-        
+
         {/* Full-width timer */}
         {(type === 'question' || type === 'answer') && duration && (
           <div className="w-full mb-4">
             <CountdownTimer duration={duration} isQuestion={type === 'question'} />
           </div>
         )}
-        
+
         <div className="flex-1 flex items-center justify-center overflow-y-auto">
           {renderContent()}
         </div>
