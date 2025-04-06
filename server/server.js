@@ -36,7 +36,7 @@ const io = socketIo(server, {
 const sampleData = require('./sampleData');
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI_LOCAL || 'mongodb://localhost:27017/QuizDbv2';
+const MONGODB_URI = process.env.MONGODB_URI_LOCAL || 'mongodb://localhost:27017/QuizDbv3';
 
 mongoose.connect(MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
