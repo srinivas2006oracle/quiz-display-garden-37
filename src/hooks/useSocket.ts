@@ -8,6 +8,8 @@ export type PairedDisplayData = {
   primary: DisplayData;
   secondary?: DisplayData;
   duration: number;
+  questionIndex?: number;
+  totalQuestions?: number;
 }
 
 // The URL of the backend server
@@ -18,6 +20,8 @@ export const useSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [currentPairedData, setCurrentPairedData] = useState<PairedDisplayData | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [questionIndex, setQuestionIndex] = useState<number | undefined>(undefined);
+  const [totalQuestions, setTotalQuestions] = useState<number | undefined>(undefined);
 
   // Connect to socket server
   useEffect(() => {
@@ -64,6 +68,15 @@ export const useSocket = () => {
           data.primary.data = { text: '', description: '' };
         }
         
+        // Update question index and total questions if available
+        if (data.questionIndex !== undefined) {
+          setQuestionIndex(data.questionIndex);
+        }
+        
+        if (data.totalQuestions !== undefined) {
+          setTotalQuestions(data.totalQuestions);
+        }
+        
         setCurrentPairedData(data);
       } else {
         console.error('Received malformed display data:', data);
@@ -79,5 +92,7 @@ export const useSocket = () => {
   return {
     currentPairedData,
     isConnected,
+    questionIndex,
+    totalQuestions
   };
 };

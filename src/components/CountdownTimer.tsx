@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Progress } from '@/components/ui/progress';
 
@@ -42,12 +43,12 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ duration, onComplete, i
   const timerTitle = isQuestion ? 'Answer in...' : 'Next Question in...';
 
   return (
-    <div className="w-full flex flex-col gap-1">
-      <div className="flex justify-between items-center text-xs text-white/70">
+    <div className="w-full flex flex-col gap-2">
+      <div className="flex justify-between items-center text-sm md:text-base font-bold text-white">
         <span>{timerTitle}</span>
         <span>{secondsLeft}s</span>
       </div>
-      <Progress value={progress} className="h-1.5 bg-white/10" />
+      <Progress value={progress} className="h-3 bg-white/20" indicatorClassName="bg-gradient-to-r from-blue-500 to-green-400" />
     </div>
   );
 };
