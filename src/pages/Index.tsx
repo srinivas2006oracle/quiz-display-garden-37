@@ -41,9 +41,9 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col bg-quiz-pattern bg-repeat bg-opacity-10">
       <Header />
-      <main className="flex-1 flex flex-col items-center justify-center p-2 md:p-4 overflow-hidden">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 overflow-hidden">
         {currentPairedData ? (
-          <div className="w-full h-full max-w-screen-2xl">
+          <div className="w-full h-full max-w-[90%] mx-auto">
             <DisplayCard 
               data={currentPairedData.primary} 
               isVisible={true} 
