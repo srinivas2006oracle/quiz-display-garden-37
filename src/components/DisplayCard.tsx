@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from 'react';
 import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
-import { Check, Clock, Award, HelpCircle, Image, Video, Info, CreditCard, QrCode, Calendar, MessageCircle, Users, Confetti } from 'lucide-react';
+import { Check, Clock, Award, HelpCircle, Image, Video, Info, CreditCard, QrCode, Calendar, MessageCircle, Users, PartyPopper } from 'lucide-react';
 import { format } from 'date-fns';
 import CountdownTimer from './CountdownTimer';
 
@@ -99,7 +98,6 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
         {question.text && <h2 className="text-xl md:text-3xl font-bold mb-4">{question.text}</h2>}
         
         <div className="flex flex-col md:flex-row w-full gap-6 justify-center">
-          {/* Question image on the left */}
           {question.image && (
             <div className="w-full md:w-1/2 overflow-hidden rounded-lg">
               <img 
@@ -110,7 +108,6 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
             </div>
           )}
           
-          {/* Choices on the right */}
           {question.choices && (
             <div className="grid grid-cols-1 gap-2 w-full md:w-1/2">
               {question.choices.map((choice: string, index: number) => (
@@ -195,7 +192,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({ data, isVisible, isPortrait, 
         {showConfetti && (
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
             <div className="text-center">
-              <Confetti className="h-20 w-20 text-yellow-300 animate-bounce" />
+              <PartyPopper className="h-20 w-20 text-yellow-300 animate-bounce" />
             </div>
           </div>
         )}
