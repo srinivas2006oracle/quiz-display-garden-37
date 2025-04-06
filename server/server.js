@@ -1,3 +1,4 @@
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -35,6 +36,16 @@ const io = socketIo(server, {
 // Import sample data generator functions for static content
 const sampleData = require('./sampleData');
 
+// Define timing constants (in milliseconds)
+const TIMING = {
+  INTRO_IMAGE: 10000,
+  DISCLAIMER: 10000,
+  INTRO_VIDEO: 10000,
+  QUESTION: 30000,
+  ANSWER: 10000,
+  CREDITS: 20000
+};
+
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI_LOCAL || 'mongodb://localhost:27017/QuizDbv3';
 
@@ -60,7 +71,6 @@ const ChoiceSchema = new Schema({
   choiceIndex: Number,
   choiceText: String,
   choiceImageurl: String,
-  //choiceResponses: [ResponseSchema],
   isCorrectChoice: Boolean
 });
 
@@ -124,7 +134,6 @@ const activeConnections = new Set();
 let activeGame = null;
 let currentGameSequence = [];
 let currentSequenceIndex = 0;
-let responseRefreshTimer;
 let autoGameTimer = null;
 
 // Game Management Routes
@@ -206,7 +215,6 @@ app.post('/admin/game/stop/:id', async (req, res) => {
     // Clear active game
     if (activeGame && activeGame._id.toString() === game._id.toString()) {
       activeGame = null;
-      clearInterval(responseRefreshTimer);
       
       // Clear automatic sequence timer
       if (autoGameTimer) {
@@ -333,19 +341,6 @@ app.post('/admin/answer/show/:gameId', async (req, res) => {
       
       if (answerItemIndex >= 0) {
         io.emit('display_update', currentGameSequence[answerItemIndex]);
-        
-        // Show leaderboard after answer
-        setTimeout(() => {
-          const leaderboardItemIndex = currentGameSequence.findIndex(item => 
-            item.primary?.type === 'leaderboard' && 
-            item.questionIndex === currentQuestionIndex
-          );
-          
-          if (leaderboardItemIndex >= 0) {
-            io.emit('display_update', currentGameSequence[leaderboardItemIndex]);
-          }
-        }, 10000); // Show leaderboard 10 seconds after answer
-        
         res.json({ success: true, message: 'Answer displayed' });
       } else {
         res.json({ success: false, message: 'Answer not found' });
@@ -379,19 +374,19 @@ app.post('/admin/display/:type/:gameId', async (req, res) => {
       // Get the display item based on type
       switch (type) {
         case 'image':
-          displayItem = { primary: sampleData.getRandomImage(), duration: 10000 };
+          displayItem = { primary: sampleData.getRandomImage(), duration: TIMING.INTRO_IMAGE };
           break;
         case 'disclaimer':
-          displayItem = { primary: sampleData.getDisclaimer(), duration: 10000 };
+          displayItem = { primary: sampleData.getDisclaimer(), duration: TIMING.DISCLAIMER };
           break;
         case 'video':
-          displayItem = { primary: sampleData.getRandomVideo(), duration: 10000 };
+          displayItem = { primary: sampleData.getRandomVideo(), duration: TIMING.INTRO_VIDEO };
           break;
         case 'credits':
           displayItem = { 
             primary: sampleData.getCredits(), 
             secondary: sampleData.getRandomUpcomingSchedule(), 
-            duration: 20000 
+            duration: TIMING.CREDITS 
           };
           break;
         default:
@@ -464,6 +459,17 @@ function startAutomaticSequence(game) {
         game.activeQuestionIndex = currentItem.questionIndex;
         game.questionStartedAt = new Date();
         game.isQuestionOpen = true;
+        
+        // Find the correct choice for this question
+        if (game.questions[currentItem.questionIndex]) {
+          const correctChoice = game.questions[currentItem.questionIndex].choices.find(c => c.isCorrectChoice);
+          if (correctChoice) {
+            game.correctChoiceIndex = correctChoice.choiceIndex;
+          } else {
+            game.correctChoiceIndex = -1;
+          }
+        }
+        
         game.save().catch(err => console.error('Error saving game state:', err));
       }
       
@@ -497,21 +503,20 @@ function startAutomaticSequence(game) {
 }
 
 // Function to create the display sequence for a game
-// Function to create the display sequence for a game
 function createGameSequence(game) {
   if (!game || !game.questions || game.questions.length === 0) {
     console.error('No questions found in the game');
     return [];
   }
-
+  
   currentSequenceIndex = 0;
   currentGameSequence = [];
-
+  
   // Add intro items
-  currentGameSequence.push({ primary: sampleData.getRandomImage(), duration: 10000 });  // Image for 10 seconds
-  currentGameSequence.push({ primary: sampleData.getDisclaimer(), duration: 10000 });   // Disclaimer for 10 seconds
-  currentGameSequence.push({ primary: sampleData.getRandomVideo(), duration: 10000 });  // Video for 10 seconds
-
+  currentGameSequence.push({ primary: sampleData.getRandomImage(), duration: TIMING.INTRO_IMAGE });  // Image
+  currentGameSequence.push({ primary: sampleData.getDisclaimer(), duration: TIMING.DISCLAIMER });   // Disclaimer
+  currentGameSequence.push({ primary: sampleData.getRandomVideo(), duration: TIMING.INTRO_VIDEO });  // Video
+  
   // Add each question and answer
   game.questions.forEach((question, index) => {
     // Convert question format to display format
@@ -523,194 +528,45 @@ function createGameSequence(game) {
         choices: question.choices.map(choice => choice.choiceText)
       }
     };
-
-    // Fetch stored responses for this question
-    let responseData = {
-      type: 'responses',
-      data: []
-    };
-
-    // Check if question has any responses stored
-    let hasResponses = false;
-    question.choices.forEach(choice => {
-      if (choice.choiceResponses && choice.choiceResponses.length > 0) {
-        hasResponses = true;
-      }
+    
+    // Add question item
+    currentGameSequence.push({ 
+      primary: questionData, 
+      duration: TIMING.QUESTION,
+      questionIndex: index
     });
-
-    if (hasResponses) {
-      // Extract responses from all choices
-      const allResponses = [];
-      question.choices.forEach((choice, choiceIndex) => {
-        if (choice.choiceResponses && choice.choiceResponses.length > 0) {
-          choice.choiceResponses.forEach(response => {
-            allResponses.push({
-              name: response.userName || `User ${allResponses.length + 1}`,
-              picture: response.ytProfilePicUrl || null,
-              responseTime: response.responseTime,
-              optionIndex: choiceIndex
-            });
-          });
-        }
-      });
-
-      // Sort by response time and take first 6
-      const sortedResponses = allResponses.sort((a, b) =>
-        parseFloat(a.responseTime) - parseFloat(b.responseTime)
-      );
-
-      responseData.data = sortedResponses.slice(0, 6);
-    }
-
-    // Add question and responses pair
-    currentGameSequence.push({
-      primary: questionData,
-      secondary: responseData,
-      duration: 30000,
-      questionIndex: index,
-      totalQuestions: game.questions.length, // Add totalQuestions here
-      responsePool: question.choices.flatMap(choice =>
-        (choice.choiceResponses || []).map(response => ({
-          name: response.userName || `Unknown User`,
-          picture: response.ytProfilePicUrl || null,
-          responseTime: response.responseTime,
-          optionIndex: choice.choiceIndex
-        }))
-      ),
-      responsePageIndex: 0
-    });
-
+    
     // Find correct choice
     const correctChoiceIndex = question.choices.findIndex(choice => choice.isCorrectChoice);
-
+    
     // Answer data
     const answerData = {
       type: 'answer',
       data: {
         text: correctChoiceIndex >= 0 ? question.choices[correctChoiceIndex].choiceText : "Not specified",
-        description: question.answerExplanation
+        description: question.answerExplanation,
+        questionText: question.questionText,
+        questionImage: question.questionImageUrl
       }
     };
-
-    // SuperSix data - fastest correct answers
-    const fastestAnswersData = {
-      type: 'superSix',
-      data: {
-        responses: []
-      }
-    };
-
-    // If there's a correct choice with responses, populate SuperSix
-    if (correctChoiceIndex >= 0 &&
-        question.choices[correctChoiceIndex].choiceResponses &&
-        question.choices[correctChoiceIndex].choiceResponses.length > 0) {
-
-      // Extract and sort correct responses
-      const correctResponses = question.choices[correctChoiceIndex].choiceResponses.map(response => ({
-        name: response.userName || 'Anonymous',
-        picture: response.ytProfilePicUrl || null,
-        responseTime: response.responseTime
-      }));
-
-      // Sort by response time and take first 6
-      fastestAnswersData.data.responses = correctResponses
-        .sort((a, b) => parseFloat(a.responseTime) - parseFloat(b.responseTime))
-        .slice(0, 6);
-    }
-
-    // Add answer and fastest answers pair
-    currentGameSequence.push({
-      primary: answerData,
-      secondary: fastestAnswersData,
-      duration: 10000,
-      questionIndex: index,
-      totalQuestions: game.questions.length // Add totalQuestions here
-    });
-
-    // Empty leaderboard for now
-    const leaderboardData = {
-      type: 'leaderboard',
-      data: {
-        users: []
-      }
-    };
-
-    // Add leaderboard
-    currentGameSequence.push({
-      primary: leaderboardData,
-      duration: 10000,
-      questionIndex: index,
-      totalQuestions: game.questions.length // Add totalQuestions here
+    
+    // Add answer
+    currentGameSequence.push({ 
+      primary: answerData, 
+      duration: TIMING.ANSWER,
+      questionIndex: index
     });
   });
-
-  // Add outro items
-  currentGameSequence.push({
-    primary: sampleData.getCredits(),
-    secondary: sampleData.getRandomUpcomingSchedule(),
-    duration: 20000
+  
+  // Add outro credits
+  currentGameSequence.push({ 
+    primary: sampleData.getCredits(), 
+    secondary: sampleData.getRandomUpcomingSchedule(), 
+    duration: TIMING.CREDITS 
   });
-
+  
   return currentGameSequence;
 }
-
-
-// Handle response pagination - Update for the next 6 responses
-app.post('/admin/question/refresh-responses/:gameId', async (req, res) => {
-  try {
-    const { gameId } = req.params;
-    const game = await QuizGame.findById(gameId);
-    
-    if (!game || !game.isGameOpen) {
-      return res.status(400).json({ success: false, message: 'Game not found or not open' });
-    }
-    
-    const questionIndex = game.activeQuestionIndex;
-    if (questionIndex < 0 || questionIndex >= game.questions.length) {
-      return res.status(400).json({ success: false, message: 'Invalid question index' });
-    }
-    
-    // Find the current question in the sequence
-    const questionItemIndex = currentGameSequence.findIndex(item => 
-      item.primary?.type === 'question' && item.questionIndex === questionIndex
-    );
-    
-    if (questionItemIndex < 0) {
-      return res.status(400).json({ success: false, message: 'Question not found in sequence' });
-    }
-    
-    const questionItem = currentGameSequence[questionItemIndex];
-    
-    // If we have a response pool, get the next page of responses
-    if (questionItem.responsePool && questionItem.responsePool.length > 0) {
-      questionItem.responsePageIndex = (questionItem.responsePageIndex || 0) + 1;
-      const startIndex = (questionItem.responsePageIndex * 6) % questionItem.responsePool.length;
-      
-      // Get next 6 responses or wrap around
-      const nextResponses = [];
-      for (let i = 0; i < 6; i++) {
-        const index = (startIndex + i) % questionItem.responsePool.length;
-        nextResponses.push(questionItem.responsePool[index]);
-      }
-      
-      // Update the responses in the question item
-      questionItem.secondary = {
-        type: 'responses',
-        data: nextResponses
-      };
-      
-      // Send the updated responses to all clients
-      io.emit('display_update', questionItem);
-      
-      res.json({ success: true, message: 'Responses refreshed' });
-    } else {
-      res.json({ success: false, message: 'No responses available' });
-    }
-  } catch (err) {
-    console.error('Error refreshing responses:', err);
-    res.status(500).json({ success: false, message: 'Error refreshing responses' });
-  }
-});
 
 // Define the port
 const PORT = process.env.PORT || 5001;
