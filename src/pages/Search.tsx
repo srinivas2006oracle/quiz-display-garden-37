@@ -9,6 +9,7 @@ import { Search as SearchIcon } from 'lucide-react';
 import { useDebouncedCallback } from '@/hooks/useDebounce';
 import { format } from 'date-fns';
 import { socket } from '@/lib/socket';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface QuizGame {
   id: string;
@@ -90,11 +91,11 @@ const Search = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <Card className="mb-6">
+    <div className="container mx-auto p-4 min-h-screen flex flex-col bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
+      <Card className="mb-6 bg-black/40 backdrop-blur-md border border-white/10">
         <CardHeader>
-          <CardTitle className="text-center text-3xl font-bold">Quiz Games</CardTitle>
-          <CardDescription className="text-center">Search for quiz games to play</CardDescription>
+          <CardTitle className="text-center text-3xl font-bold text-gradient">Quiz Games</CardTitle>
+          <CardDescription className="text-center text-white/70">Search for quiz games to play</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
@@ -105,24 +106,26 @@ const Search = () => {
                 placeholder="Search by title, description or topic..."
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="pl-10"
+                className="pl-10 bg-white/10 border-white/20 text-white"
               />
             </div>
             <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
               <div>
-                <label className="text-sm font-medium">From</label>
+                <label className="text-sm font-medium text-white/70">From</label>
                 <Input
                   type="date"
                   value={startDateFrom}
                   onChange={(e) => setStartDateFrom(e.target.value)}
+                  className="bg-white/10 border-white/20 text-white"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">To</label>
+                <label className="text-sm font-medium text-white/70">To</label>
                 <Input
                   type="date"
                   value={startDateTo}
                   onChange={(e) => setStartDateTo(e.target.value)}
+                  className="bg-white/10 border-white/20 text-white"
                 />
               </div>
             </div>
@@ -130,56 +133,61 @@ const Search = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="flex-1 glass-card">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Topics</TableHead>
-                <TableHead>Questions</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    Loading quiz games...
-                  </TableCell>
+          <ScrollArea className="h-[60vh]">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-white/20">
+                  <TableHead className="text-white/90">Title</TableHead>
+                  <TableHead className="text-white/90">Description</TableHead>
+                  <TableHead className="text-white/90">Date</TableHead>
+                  <TableHead className="text-white/90">Topics</TableHead>
+                  <TableHead className="text-white/90">Questions</TableHead>
+                  <TableHead className="text-white/90">Action</TableHead>
                 </TableRow>
-              ) : quizGames.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    No quiz games found matching your criteria.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                quizGames.map((game) => (
-                  <TableRow key={game.id}>
-                    <TableCell className="font-medium">{game.title}</TableCell>
-                    <TableCell>{game.description || "No description"}</TableCell>
-                    <TableCell>
-                      {game.scheduledStart ? format(new Date(game.scheduledStart), 'MMM d, yyyy') : "Not scheduled"}
-                    </TableCell>
-                    <TableCell>
-                      {game.topics && game.topics.length > 0
-                        ? game.topics.join(', ')
-                        : "No topics"}
-                    </TableCell>
-                    <TableCell>{game.questionCount}</TableCell>
-                    <TableCell>
-                      <Button onClick={() => handleStartGame(game.id)}>
-                        Begin Game
-                      </Button>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-white/70">
+                      Loading quiz games...
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : quizGames.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-white/70">
+                      No quiz games found matching your criteria.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  quizGames.map((game) => (
+                    <TableRow key={game.id} className="border-b border-white/10 hover:bg-white/5">
+                      <TableCell className="font-medium text-white">{game.title}</TableCell>
+                      <TableCell className="text-white/80">{game.description || "No description"}</TableCell>
+                      <TableCell className="text-white/80">
+                        {game.scheduledStart ? format(new Date(game.scheduledStart), 'MMM d, yyyy') : "Not scheduled"}
+                      </TableCell>
+                      <TableCell className="text-white/80">
+                        {game.topics && game.topics.length > 0
+                          ? game.topics.join(', ')
+                          : "No topics"}
+                      </TableCell>
+                      <TableCell className="text-white/80">{game.questionCount}</TableCell>
+                      <TableCell>
+                        <Button 
+                          onClick={() => handleStartGame(game.id)}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        >
+                          Begin Game
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>
