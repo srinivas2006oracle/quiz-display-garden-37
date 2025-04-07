@@ -2,7 +2,7 @@
 import { io, Socket } from 'socket.io-client';
 
 // The URL of the backend server
-const SOCKET_SERVER_URL = 'http://localhost:5001';
+export const SOCKET_SERVER_URL = 'http://localhost:5001';
 
 // Create a singleton socket instance
 export const socket: Socket = io(SOCKET_SERVER_URL);

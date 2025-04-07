@@ -52,7 +52,16 @@ const Search = () => {
       if (startDateFrom) params.append('startDateFrom', startDateFrom);
       if (startDateTo) params.append('startDateTo', startDateTo);
 
-      const response = await fetch(`/api/quizgames?${params.toString()}`);
+      // Update the API endpoint to use the SOCKET_SERVER_URL from the socket.ts file
+      const apiUrl = 'http://localhost:5001/api/quizgames';
+      console.log('Fetching from URL:', apiUrl, 'with params:', params.toString());
+      
+      const response = await fetch(`${apiUrl}?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data.success) {
