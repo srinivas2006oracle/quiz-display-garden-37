@@ -1,1 +1,6 @@
 
+# Audio files should be placed in this directory
+# Required files:
+# - question-timer.mp3
+# - answer-reveal.mp3
+# - credits-music.mp3

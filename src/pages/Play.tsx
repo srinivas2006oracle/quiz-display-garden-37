@@ -5,10 +5,12 @@ import DisplayCard from '@/components/DisplayCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { audioControls } from '@/lib/socket';
+import { useToast } from "@/hooks/use-toast";
 
 const Play = () => {
   const { currentPairedData, isConnected } = useSocket();
   const [isPortrait, setIsPortrait] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // This component will automatically connect to the socket
@@ -29,10 +31,25 @@ const Play = () => {
     // Play the appropriate audio when the display changes
     if (currentPairedData?.primary?.type === 'question') {
       audioControls.playQuestionAudio();
+      toast({
+        title: "Question Timer Started",
+        description: "Time to answer the question!",
+        duration: 3000,
+      });
     } else if (currentPairedData?.primary?.type === 'answer') {
       audioControls.playAnswerAudio();
+      toast({
+        title: "Answer Revealed",
+        description: "Let's see if you got it right!",
+        duration: 3000,
+      });
     } else if (currentPairedData?.primary?.type === 'credits') {
       audioControls.playCreditsMusic();
+      toast({
+        title: "Quiz Complete",
+        description: "Thanks for playing!",
+        duration: 3000,
+      });
     }
 
     return () => {
@@ -41,7 +58,7 @@ const Play = () => {
       // Stop all audio when component unmounts
       audioControls.stopAllAudio();
     };
-  }, [isConnected, currentPairedData]);
+  }, [isConnected, currentPairedData, toast]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">

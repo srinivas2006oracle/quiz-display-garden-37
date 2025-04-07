@@ -19,6 +19,40 @@ answerAudioPlayer.volume = 0.7;
 creditsMusicPlayer.loop = true;
 creditsMusicPlayer.volume = 0.3;
 
+// Create placeholder mp3 files with default content
+const createPlaceholderAudioFile = (fileName: string) => {
+  // Check if audio files exist or create placeholder content
+  const audioFile = new Audio(fileName);
+  
+  // Handle errors silently
+  audioFile.onerror = () => {
+    console.warn(`Audio file ${fileName} not found. Please add it to the public/audio directory.`);
+  };
+  
+  return audioFile;
+};
+
+// Verify audio files or create placeholders if needed
+const verifyAudioFiles = () => {
+  // Check questionAudioPlayer
+  questionAudioPlayer.onerror = () => {
+    console.warn('Question audio file not found. Please add question-timer.mp3 to the public/audio directory.');
+  };
+  
+  // Check answerAudioPlayer
+  answerAudioPlayer.onerror = () => {
+    console.warn('Answer audio file not found. Please add answer-reveal.mp3 to the public/audio directory.');
+  };
+  
+  // Check creditsMusicPlayer
+  creditsMusicPlayer.onerror = () => {
+    console.warn('Credits music file not found. Please add credits-music.mp3 to the public/audio directory.');
+  };
+};
+
+// Call verify function immediately
+verifyAudioFiles();
+
 // Add global event handlers
 socket.on('connect', () => {
   console.log('Socket connected');
@@ -50,18 +84,49 @@ socket.on('display_update', (data) => {
 
 // Audio control functions
 export const playQuestionAudio = () => {
-  questionAudioPlayer.currentTime = 0;
-  questionAudioPlayer.play().catch(e => console.log('Error playing audio:', e));
+  try {
+    questionAudioPlayer.currentTime = 0;
+    const playPromise = questionAudioPlayer.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.catch(e => {
+        console.log('Error playing question audio:', e);
+        // If autoplay is blocked, we can show a UI element to let the user enable audio manually
+      });
+    }
+  } catch (e) {
+    console.log('Error playing question audio:', e);
+  }
 };
 
 export const playAnswerAudio = () => {
-  answerAudioPlayer.currentTime = 0;
-  answerAudioPlayer.play().catch(e => console.log('Error playing audio:', e));
+  try {
+    answerAudioPlayer.currentTime = 0;
+    const playPromise = answerAudioPlayer.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.catch(e => {
+        console.log('Error playing answer audio:', e);
+      });
+    }
+  } catch (e) {
+    console.log('Error playing answer audio:', e);
+  }
 };
 
 export const playCreditsMusic = () => {
-  creditsMusicPlayer.currentTime = 0;
-  creditsMusicPlayer.play().catch(e => console.log('Error playing audio:', e));
+  try {
+    creditsMusicPlayer.currentTime = 0;
+    const playPromise = creditsMusicPlayer.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.catch(e => {
+        console.log('Error playing credits music:', e);
+      });
+    }
+  } catch (e) {
+    console.log('Error playing credits music:', e);
+  }
 };
 
 export const stopAllAudio = () => {
