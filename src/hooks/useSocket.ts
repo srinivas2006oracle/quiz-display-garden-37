@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { socket } from '@/lib/socket';
 import { DisplayData } from '@/lib/sampleData';
 
 // Define a new type for paired displays
@@ -12,49 +12,44 @@ export type PairedDisplayData = {
   totalQuestions?: number;
 }
 
-// The URL of the backend server
-const SOCKET_SERVER_URL = 'http://localhost:5001';
-
-// This implements a connection to the socket.io server
+// This hook manages the socket connection and display data
 export const useSocket = () => {
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [currentPairedData, setCurrentPairedData] = useState<PairedDisplayData | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(socket.connected);
   const [questionIndex, setQuestionIndex] = useState<number | undefined>(undefined);
   const [totalQuestions, setTotalQuestions] = useState<number | undefined>(undefined);
 
-  // Connect to socket server
+  // Listen for connection events
   useEffect(() => {
-    // Initialize socket connection
-    const newSocket = io(SOCKET_SERVER_URL);
-    setSocket(newSocket);
-
-    // Socket connection event handlers
-    newSocket.on('connect', () => {
-      console.log('Socket connected');
+    const onConnect = () => {
+      console.log('Socket connected in hook');
       setIsConnected(true);
-    });
+    };
 
-    newSocket.on('connection_established', (data) => {
-      console.log('Connection established:', data);
-    });
-
-    newSocket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    const onDisconnect = () => {
+      console.log('Socket disconnected in hook');
       setIsConnected(false);
-    });
+    };
 
-    // Clean up on unmount
+    const onConnectionEstablished = (data: any) => {
+      console.log('Connection established:', data);
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('connection_established', onConnectionEstablished);
+
+    // Clean up listeners on unmount
     return () => {
-      newSocket.disconnect();
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('connection_established', onConnectionEstablished);
     };
   }, []);
 
   // Listen for display updates from the server
   useEffect(() => {
-    if (!socket) return;
-
-    socket.on('display_update', (data: PairedDisplayData) => {
+    const onDisplayUpdate = (data: PairedDisplayData) => {
       console.log('Received display update:', data);
       
       // Make sure we have properly structured data with valid fields
@@ -81,13 +76,15 @@ export const useSocket = () => {
       } else {
         console.error('Received malformed display data:', data);
       }
-    });
+    };
+
+    socket.on('display_update', onDisplayUpdate);
 
     // Clean up listener on unmount
     return () => {
-      socket.off('display_update');
+      socket.off('display_update', onDisplayUpdate);
     };
-  }, [socket]);
+  }, []);
 
   return {
     currentPairedData,

@@ -5,6 +5,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const path = require('path');
 const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 
 // Initialize express app
 const app = express();
@@ -110,6 +111,7 @@ const QuizSchema = new Schema({
 
 const QuizGameSchema = new Schema({
   gameTitle: String,
+  gameDescription: { type: String, default: "" },
   gameScheduledStart: Date,
   gameScheduledEnd: Date,
   gameStartedAt: Date,
@@ -123,7 +125,8 @@ const QuizGameSchema = new Schema({
   isGameOpen: { type: Boolean, default: false },
   quizId: { type: Schema.Types.ObjectId, ref: 'Quiz' },
   questions: [QuestionSchema],
-  gameMode: { type: String, enum: ['automatic', 'manual'], default: 'automatic' }
+  gameMode: { type: String, enum: ['automatic', 'manual'], default: 'automatic' },
+  topics: [String]
 });
 
 // Define MongoDB Models
@@ -138,6 +141,91 @@ let activeGame = null;
 let currentGameSequence = [];
 let currentSequenceIndex = 0;
 let autoGameTimer = null;
+
+// API Routes for Quiz Games
+app.get('/api/quizgames', async (req, res) => {
+  try {
+    const { search, startDateFrom, startDateTo } = req.query;
+    
+    // Build the query object
+    let query = {};
+    
+    // Add search criteria if provided
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { gameTitle: searchRegex },
+        { gameDescription: searchRegex },
+        { topics: searchRegex }
+      ];
+    }
+    
+    // Add date range filter if provided
+    if (startDateFrom || startDateTo) {
+      query.gameScheduledStart = {};
+      
+      if (startDateFrom) {
+        query.gameScheduledStart.$gte = new Date(startDateFrom);
+      }
+      
+      if (startDateTo) {
+        query.gameScheduledStart.$lte = new Date(startDateTo);
+      }
+    }
+    
+    const quizGames = await QuizGame.find(query)
+      .sort({ gameScheduledStart: -1 })
+      .limit(20)
+      .select('gameTitle gameDescription gameScheduledStart topics questions');
+    
+    res.json({
+      success: true,
+      data: quizGames.map(game => ({
+        id: game._id,
+        title: game.gameTitle,
+        description: game.gameDescription || "",
+        scheduledStart: game.gameScheduledStart,
+        topics: game.topics || [],
+        questionCount: game.questions ? game.questions.length : 0
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching quiz games:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch quiz games' });
+  }
+});
+
+app.get('/api/quizgame/:id', async (req, res) => {
+  try {
+    const gameId = req.params.id;
+    
+    if (!ObjectId.isValid(gameId)) {
+      return res.status(400).json({ success: false, message: 'Invalid game ID' });
+    }
+    
+    const game = await QuizGame.findById(gameId);
+    
+    if (!game) {
+      return res.status(404).json({ success: false, message: 'Quiz game not found' });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        id: game._id,
+        title: game.gameTitle,
+        description: game.gameDescription || "",
+        scheduledStart: game.gameScheduledStart,
+        scheduledEnd: game.gameScheduledEnd,
+        topics: game.topics || [],
+        questionCount: game.questions ? game.questions.length : 0
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching quiz game:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch quiz game' });
+  }
+});
 
 // Socket.IO connection handler
 io.on('connection', (socket) => {
@@ -164,6 +252,60 @@ io.on('connection', (socket) => {
     // Start the quiz sequence for this connection if no active game
     startQuizSequence(socket);
   }
+  
+  // Handle start game request
+  socket.on('start_game', async (data) => {
+    try {
+      console.log('Received start_game request:', data);
+      
+      if (!data.gameId || !ObjectId.isValid(data.gameId)) {
+        socket.emit('error', { message: 'Invalid game ID' });
+        return;
+      }
+      
+      const game = await QuizGame.findById(data.gameId);
+      
+      if (!game) {
+        socket.emit('error', { message: 'Game not found' });
+        return;
+      }
+      
+      // Clear any existing timer
+      if (autoGameTimer) {
+        clearTimeout(autoGameTimer);
+        autoGameTimer = null;
+      }
+      
+      // Set game as active
+      game.isGameOpen = true;
+      game.gameStartedAt = new Date();
+      game.activeQuestionIndex = -1;
+      await game.save();
+      
+      activeGame = game;
+      
+      // Create and start game sequence
+      await createGameSequence(game);
+      if (game.gameMode === 'automatic') {
+        startAutomaticSequence(game);
+      } else {
+        // Send first item in sequence for manual mode
+        if (currentGameSequence.length > 0) {
+          socket.emit('display_update', currentGameSequence[0]);
+        }
+      }
+      
+      // Acknowledge the request
+      socket.emit('game_started', { 
+        gameId: game._id,
+        gameTitle: game.gameTitle
+      });
+      
+    } catch (error) {
+      console.error('Error starting game:', error);
+      socket.emit('error', { message: 'Failed to start game' });
+    }
+  });
   
   // Handle disconnection
   socket.on('disconnect', () => {
@@ -335,7 +477,8 @@ async function createGameSequence(game) {
     currentGameSequence.push({ 
       primary: questionData, 
       duration: TIMING.QUESTION,
-      questionIndex: index
+      questionIndex: index,
+      totalQuestions: game.questions.length
     });
     
     // Answer data from the game
