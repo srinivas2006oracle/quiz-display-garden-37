@@ -57,15 +57,17 @@ mongoose.connect(MONGODB_URI)
 // Define MongoDB Schemas
 const { Schema } = mongoose;
 
-const ResponseSchema = new Schema({
+// Answer Schema for responses 
+const answerSchema = new mongoose.Schema({
   ytChannelId: String,
   ytProfilePicUrl: String,
   userName: String,
   firstName: String,
   lastName: String,
-  ytTimeStamp: { type: Date, default: Date.now },
-  systemTimeStamp: { type: Date, default: Date.now },
-  responseTime: Number,
+  questionIndex: Number,
+  responseTime: Number, // questionStartedAt - ytPubTimeStamp
+  isCorrectAnswer: Boolean,
+  quizGameId: { type: mongoose.Schema.Types.ObjectId, ref: 'QuizGame' },
 });
 
 const ChoiceSchema = new Schema({
@@ -80,8 +82,19 @@ const QuestionSchema = new Schema({
   questionImageUrl: String,
   questionTopicsList: [String],
   choices: [ChoiceSchema],
+  questionType: { type: String, enum: ['multiple-choice', 'fill-in-blank'], default: 'multiple-choice' },
+  answerText: String,
+  answerImageUrl: String,
   answerExplanation: String,
-  templateCategory: String,
+  templateCode: { 
+    type: String, 
+    enum: [
+      '1QP4C', '1Q4C', '1QP3C', '1Q3C', '1QP2CP', '1Q2CP', 
+      '1QP1AP', '1Q1A', '1QP1A', '1Q1AP', '1Q2OP', 'Other',
+      'multiple-choice', 'fill-in-blank', 'Other'
+    ], 
+    default: 'multiple-choice' 
+  },
   difficultyLevel: String,
   questionLanguage: String,
   validatedManually: { type: Boolean, default: false },
@@ -96,7 +109,15 @@ const QuizSchema = new Schema({
   quizDescription: String,
   quizTopicsList: [String],
   quizLanguage: String,
-  templateCategory: String,
+  templateCode: { 
+    type: String, 
+    enum: [
+      '1QP4C', '1Q4C', '1QP3C', '1Q3C', '1QP2CP', '1Q2CP', 
+      '1QP1AP', '1Q1A', '1QP1A', '1Q1AP', '1Q2OP', 'Other',
+      'multiple-choice', 'fill-in-blank'
+    ], 
+    default: '1QP3C' 
+  },
   youtubeChannel: String,
   questions: [QuestionSchema],
   readyForLive: { type: Boolean, default: false },
@@ -117,20 +138,23 @@ const QuizGameSchema = new Schema({
   questionStartedAt: Date,
   isQuestionOpen: { type: Boolean, default: false },
   correctChoiceIndex: { type: Number, min: -1, default: -1 },
-  liveIDs: [String],
-  liveChatdIDs: [String],
   isGameOpen: { type: Boolean, default: false },
   quizId: { type: Schema.Types.ObjectId, ref: 'Quiz' },
   questions: [QuestionSchema],
+  introImage: { type: String, default: '' },
   gameMode: { type: String, enum: ['automatic', 'manual'], default: 'automatic' },
-  topics: [String]
+  topics: [String],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+  createdBy: String,
+  updatedBy: String
 });
 
 // Define MongoDB Models
 const Question = mongoose.model('Question', QuestionSchema);
 const Quiz = mongoose.model('Quiz', QuizSchema);
 const QuizGame = mongoose.model('QuizGame', QuizGameSchema);
-const AllResponse = mongoose.model('AllResponse', ResponseSchema);
+const Answer = mongoose.model('Answer', answerSchema);
 
 // Store active connections and game state
 const activeConnections = new Set();
@@ -139,7 +163,7 @@ let currentGameSequence = [];
 let currentSequenceIndex = 0;
 let autoGameTimer = null;
 
-// API Routes for Quiz Games - Adding these new endpoints
+// API Routes for Quiz Games
 app.get('/api/quizgames', async (req, res) => {
   try {
     const { search, startDateFrom, startDateTo } = req.query;
@@ -661,13 +685,15 @@ function createGameSequence(game) {
   
   // Add each question and answer
   game.questions.forEach((question, index) => {
-    // Convert question format to display format
+    // Convert question format to display format based on template code
     const questionData = {
       type: 'question',
       data: {
         text: question.questionText,
         image: question.questionImageUrl,
-        choices: question.choices.map(choice => choice.choiceText)
+        choices: question.choices ? question.choices.map(choice => choice.choiceText) : [],
+        templateCode: question.templateCode,
+        questionType: question.questionType
       }
     };
     
@@ -676,20 +702,32 @@ function createGameSequence(game) {
       primary: questionData, 
       duration: TIMING.QUESTION,
       questionIndex: index,
-      totalQuestions:totalQuestions
+      totalQuestions: totalQuestions
     });
     
-    // Find correct choice
-    const correctChoiceIndex = question.choices.findIndex(choice => choice.isCorrectChoice);
+    // Find correct choice or use answer text for fill-in-blank
+    let answerText = "Not specified";
+    
+    if (question.questionType === 'multiple-choice') {
+      const correctChoiceIndex = question.choices.findIndex(choice => choice.isCorrectChoice);
+      if (correctChoiceIndex >= 0) {
+        answerText = question.choices[correctChoiceIndex].choiceText;
+      }
+    } else if (question.questionType === 'fill-in-blank') {
+      answerText = question.answerText || "Not specified";
+    }
     
     // Answer data
     const answerData = {
       type: 'answer',
       data: {
-        text: correctChoiceIndex >= 0 ? question.choices[correctChoiceIndex].choiceText : "Not specified",
+        text: answerText,
         description: question.answerExplanation,
+        image: question.answerImageUrl, // New field for answer image
         questionText: question.questionText,
-        questionImage: question.questionImageUrl
+        questionImage: question.questionImageUrl,
+        templateCode: question.templateCode,
+        questionType: question.questionType
       }
     };
     
