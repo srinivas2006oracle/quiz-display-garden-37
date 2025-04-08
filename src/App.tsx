@@ -1,31 +1,26 @@
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Search from "./pages/Search";
 import Play from "./pages/Play";
+import Search from "./pages/Search";
 import NotFound from "./pages/NotFound";
+import QuizDemo from "./pages/QuizDemo";
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+function App() {
+  return (
+    <>
       <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Search />} />
-          <Route path="/play" element={<Play />} />
-          <Route path="/preview" element={<Index />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/play" element={<Play />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/quiz-demo" element={<QuizDemo />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
+  );
+}
 
 export default App;

@@ -1,65 +1,43 @@
-
-import React, { useState, useEffect } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import DisplayCard from '@/components/DisplayCard';
-import { useSocket } from '@/hooks/useSocket';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Loader2 } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
 
 const Index = () => {
-  const { currentPairedData, isConnected, questionIndex, totalQuestions } = useSocket();
-  const [isPortrait, setIsPortrait] = useState(window.innerHeight > window.innerWidth);
-  const isMobile = useIsMobile();
-
-  // Effect for handling orientation changes
-  useEffect(() => {
-    const handleResize = () => {
-      setIsPortrait(window.innerHeight > window.innerWidth);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Loading state
-  if (!isConnected) {
-    return (
-      <div className="min-h-screen flex flex-col bg-quiz-pattern bg-repeat bg-opacity-10">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 text-quiz-purple animate-spin" />
-            <p className="text-lg font-bold">Connecting to quiz server...</p>
+  return (
+    <div>
+      <Toaster />
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold mb-4">Quiz Display Garden</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-lg font-semibold mb-2">Play</h2>
+            <p className="text-gray-600 mb-4">
+              Start playing the quiz and test your knowledge.
+            </p>
+            <Link to="/play" className="text-purple-600 hover:text-purple-800">
+              Play Now
+            </Link>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-lg font-semibold mb-2">Search</h2>
+            <p className="text-gray-600 mb-4">
+              Search for specific questions or topics.
+            </p>
+            <Link
+              to="/search"
+              className="text-purple-600 hover:text-purple-800"
+            >
+              Search
+            </Link>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-lg font-semibold mb-2">Quiz Demo</h2>
+            <p className="text-gray-600 mb-4">See our new question and answer display system in action</p>
+            <Link to="/quiz-demo" className="text-purple-600 hover:text-purple-800">
+              View Demo
+            </Link>
           </div>
         </div>
-        <Footer />
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen flex flex-col bg-quiz-pattern bg-repeat bg-opacity-10">
-      <Header />
-      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 overflow-hidden">
-        {currentPairedData ? (
-          <div className="w-full h-full max-w-[90%] mx-auto">
-            <DisplayCard 
-              data={currentPairedData.primary} 
-              isVisible={true} 
-              isPortrait={isPortrait}
-              duration={currentPairedData.duration}
-              questionIndex={questionIndex}
-              totalQuestions={totalQuestions}
-            />
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-lg text-gray-400 font-bold">Waiting for quiz data...</p>
-          </div>
-        )}
-      </main>
-      <Footer />
     </div>
   );
 };
