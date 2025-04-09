@@ -91,6 +91,7 @@ const Search = () => {
   };
 
   return (
+    
     <div className="container mx-auto p-4 min-h-screen flex flex-col bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
       <Card className="mb-6 bg-black/40 backdrop-blur-md border border-white/10">
         <CardHeader>

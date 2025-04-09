@@ -4,7 +4,6 @@ import { DisplayData } from '@/lib/sampleData';
 import { getAnimationForType } from '@/lib/animationUtils';
 import { Check, HelpCircle, PartyPopper } from 'lucide-react';
 import { format } from 'date-fns';
-import CountdownTimer from './CountdownTimer';
 
 interface DisplayCardProps {
   data: DisplayData;
@@ -95,11 +94,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
 
     return (
       <div className="flex flex-col items-center w-full h-full">
-        {questionIndex !== undefined && totalQuestions && (
-          <div className="text-lg md:text-xl mt-2 text-yellow-300 font-normal text-center">
-            Question {questionIndex + 1} of {totalQuestions}
-          </div>
-        )}
+
         {question.text && (
           <h2 className="text-2xl md:text-4xl font-bold mb-4 text-center">
             {question.text}
@@ -123,7 +118,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
               {question.choices.map((choice: string, index: number) => (
                 <div
                   key={index}
-                  className={`p-4 bg-white/20 rounded-lg text-white font-bold text-xl md:text-2xl transform transition-all duration-300 text-center ${animatedItems.includes(index) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
+                  className={`p-4 bg-white/20 rounded-lg text-white font-bold text-xl md:text-2xl transform transition-all duration-300 text-left ${animatedItems.includes(index) ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
                     }`}
                 >
                   <span className="font-bold mr-3 text-yellow-300">{optionIdentifiers[index]})</span> {choice}
@@ -131,6 +126,7 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
               ))}
             </div>
           )}
+
         </div>
       </div>
     );
@@ -178,10 +174,17 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
 
   const renderAnswer = () => {
     const answer = data.data as any;
+  
+    const hasImage = !!answer.questionImage;
+  
     return (
-      <div className="flex flex-col md:flex-row items-center w-full h-full gap-8">
-        {/* Question image on left */}
-        {answer.questionImage && (
+      <div
+        className={`flex ${
+          hasImage ? 'flex-col md:flex-row gap-8' : 'flex-col'
+        } items-center justify-center w-full h-full relative`}
+      >
+        {/* Question image (if exists) */}
+        {hasImage && (
           <div className="w-full md:w-2/5 flex justify-center">
             <img
               src={answer.questionImage}
@@ -190,33 +193,48 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
             />
           </div>
         )}
-
-        {/* Answer on right */}
-        <div className="w-full md:w-3/5 flex flex-col items-center text-center">
+  
+        {/* Answer content */}
+        <div
+          className={`${
+            hasImage ? 'w-full md:w-3/5 items-start md:items-center text-left md:text-center' : 'w-full items-center text-center'
+          } flex flex-col`}
+        >
           {/* Confetti effect */}
           {showConfetti && (
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <div className="text-center">
-                <PartyPopper className="h-20 w-20 text-yellow-300 animate-bounce" />
-              </div>
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+              <PartyPopper className="h-20 w-20 text-yellow-300 animate-bounce" />
             </div>
           )}
-
+  
           {/* Question text */}
-          {answer.questionText && <h2 className="text-2xl md:text-3xl font-bold mb-2 text-center">{answer.questionText}</h2>}
-
-          {/* Answer */}
-          <h3 className="text-2xl md:text-3xl font-bold text-green-400 mb-4 text-center">Correct Answer</h3>
-          {answer.text && (
-            <div className="text-3xl md:text-5xl font-bold text-white animate-scale-in mb-4 text-center">{answer.text}</div>
+          {answer.questionText && (
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">{answer.questionText}</h2>
           )}
+  
+          {/* Answer header */}
+          <h3 className="text-2xl md:text-3xl font-bold text-green-400 mb-4">
+            Correct Answer
+          </h3>
+  
+          {/* Answer itself */}
+          {answer.text && (
+            <div className="text-3xl md:text-5xl font-bold text-white animate-scale-in mb-4">
+              {answer.text}
+            </div>
+          )}
+  
+          {/* Explanation / Description */}
           {answer.description && (
-            <p className="text-xl md:text-2xl font-bold opacity-80 max-w-3xl text-center">{answer.description}</p>
+            <p className="text-xl md:text-2xl font-bold opacity-80 max-w-3xl">
+              {answer.description}
+            </p>
           )}
         </div>
       </div>
     );
   };
+  
 
   const renderUpcomingSchedule = () => {
     const upcomingSchedule = data.data as any;
@@ -347,20 +365,27 @@ const DisplayCard: React.FC<DisplayCardProps> = ({
         {/* Only show headers for question and answer cards */}
         {(type === 'question' || type === 'answer') && (
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {renderIcon()}
-              <h3 className="text-xl md:text-2xl font-bold capitalize">{displayType}</h3>
+              <h3 className="text-xl md:text-2xl font-bold capitalize flex items-center gap-2">
+                {displayType}
+                {type === 'question' && questionIndex !== undefined && totalQuestions !== undefined && (
+                  <span >
+                    ({` ${questionIndex + 1} of ${totalQuestions}`} )
+                  </span>
+                )}
+              </h3>
             </div>
           </div>
         )}
 
-        {/* Full-width timer */}
+        {/* Full-width timer 
         {(type === 'question' || type === 'answer') && duration && (
           <div className="w-full mb-4">
             <CountdownTimer duration={duration} isQuestion={type === 'question'} />
           </div>
         )}
-
+*/}
         <div className="flex-1 flex items-center justify-center overflow-y-auto">
           {renderContent()}
         </div>
